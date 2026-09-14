@@ -27,14 +27,14 @@ hand-offs between agents, or poke a long-running session from CI.
 Requires Node.js ≥ 22.5 (uses the built-in `node:sqlite`).
 
 ```bash
-npm install -g github:wwy155/claude-codex-mcp-relay
+npm install -g github:wwy155/agent-relay
 ```
 
 or from a clone:
 
 ```bash
-git clone https://github.com/wwy155/claude-codex-mcp-relay
-npm install -g ./claude-codex-mcp-relay
+git clone https://github.com/wwy155/agent-relay
+npm install -g ./agent-relay
 ```
 
 or run in place without installing: `node bin/agentrelay.js …`
@@ -105,7 +105,7 @@ service, port, or daemon.
   对方 agent 处理后把回复打印到终端（同步无头 resume，消息经 stdin/直接进程传递，不受引号转义影响）
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
 
-安装：`npm install -g github:wwy155/claude-codex-mcp-relay`（需 Node ≥ 22.5）。
+安装：`npm install -g github:wwy155/agent-relay`（需 Node ≥ 22.5）。
 
 **发送的前提**：claude 需要 `claude` CLI 在 PATH 且 API 可达；codex 需要 `codex` CLI 已认证；
 zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI` 指定），且
