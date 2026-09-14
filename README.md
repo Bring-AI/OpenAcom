@@ -103,9 +103,11 @@ injecting into a conversation the user has open (which the app would not
 re-render anyway: it keeps open sessions in memory and never re-reads the DB).
 
 ```
-$ agentrelay send --fresh "Summarize the API research" --json
+$ agentrelay send "Summarize the API research" --json
 { "ok": true, "sessionId": "sess_...", "reply": "..." }
 ```
+
+`send` with no sessionId defaults to this; `--fresh` is the explicit form.
 
 For a continuing back-and-forth, keep resuming that fresh session's id with the
 normal `send <id>` — it is a headless session no desktop tab holds, so nothing
@@ -201,7 +203,8 @@ zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI`
 **注意**：`send` 会消耗目标 agent 的模型额度并永久写入其 session 历史；给正在忙碌的
 session 发送可能抢占当前轮次；session 存储格式是三家 agent 的本地私有格式，随版本可能变化。
 
-**fresh 会话模式（推荐的 agent 间通信）**：`agentrelay send --fresh <消息>` 在一个
+**fresh 会话模式（默认的 agent 间通信）**：`agentrelay send <消息>`（不带 sessionId
+即走此模式；`--fresh` 为显式形式）在一个
 **全新** zcode 会话里执行消息（无头、同步拿回复、返回 sessionId）。新会话会自动出现在
 桌面应用的任务列表里，点开即可读完整记录——agent 流量对桌面始终可见，且完全不碰
 用户开着的会话（桌面不会重渲染已打开会话的外部写入）。需要多轮往来时，用普通

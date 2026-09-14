@@ -10,8 +10,8 @@ const HELP = `AgentRelay — read and message local Claude Code / Codex / ZCode 
 Usage:
   agentrelay list  [--agent zcode|claude|codex] [--limit N] [--json]
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
-  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop]
-  agentrelay send  --fresh <message...>     new zcode session per message; visible in the desktop task list
+  agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
+  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop]  resume a session
   agentrelay paths
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
@@ -76,9 +76,14 @@ function cmdRead(flags) {
 }
 
 function cmdSend(flags) {
-  if (flags.fresh) {
-    if (!flags._.length) die('send --fresh needs: <message...>');
+  const [first, ...rest] = flags._;
+  const idLike = !!first && findSession(first, flags.agent).length > 0;
+  // Fresh default: no positional args at all, --fresh, or a single positional
+  // that is a message (not a known session id) — the recommended agent-to-agent
+  // pattern: new zcode session, visible in the desktop task list, nothing stale.
+  if (flags.fresh || !first || (rest.length === 0 && !idLike)) {
     const message = flags._.join(' ');
+    if (!message) die('send needs: <message...> (fresh session)  |  <sessionId> <message...> (resume)');
     const a = ADAPTERS.zcode;
     try {
       const { id, reply } = a.sendFresh(message, flags.timeout ? { timeoutMs: flags.timeout } : {});
@@ -90,9 +95,9 @@ function cmdSend(flags) {
     } catch (e) { die(e.message); }
     return;
   }
-  const [id, ...rest] = flags._;
-  if (!id || !rest.length) die('send needs: <sessionId> <message...>');
+  const id = first;
   const message = rest.join(' ');
+  if (!message) die(idLike ? `found session ${id} but no message text (append the message, or use --fresh)` : 'send needs: <sessionId> <message...>');
   const hits = findSession(id, flags.agent);
   if (hits.length === 0) die(`session not found: ${id} (run "agentrelay list")`);
   if (hits.length > 1) die(`session id exists in ${hits.map((h) => h.name).join(' & ')}; pass --agent`);
