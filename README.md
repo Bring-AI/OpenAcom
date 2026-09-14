@@ -47,9 +47,51 @@ or run in place without installing: `node bin/agentrelay.js …`
 | `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
 | `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply |
 | `agentrelay paths` | Show detected storage locations and CLI paths |
+| `agentrelay mcp` | Run as a stdio MCP server exposing the same operations as tools |
 
 Session ids are matched across all three agents automatically; pass `--agent`
 when an id could be ambiguous or to skip the full scan.
+
+## Use as an MCP server
+
+`agentrelay mcp` runs a stdio MCP server exposing four tools — `list_sessions`,
+`read_session`, `send_message`, `get_paths` — so any MCP client can drive your
+other agents. Wire it in (adjust the path to your install):
+
+Claude Code:
+
+```bash
+claude mcp add agentrelay -- node /path/to/agent-relay/bin/agentrelay.js mcp
+```
+
+Claude Desktop (`%APPDATA%\Claude\claude_desktop_config.json`):
+
+```json
+{ "mcpServers": { "agentrelay": {
+    "command": "node",
+    "args": ["C:\path\to\agent-relay\bin\agentrelay.js", "mcp"]
+} } }
+```
+
+Codex (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.agentrelay]
+command = "node"
+args = ["C:\path	ogent-relayingentrelay.js", "mcp"]
+```
+
+ZCode (`~/.zcode/cli/config.json`):
+
+```json
+{ "mcp": { "servers": { "agentrelay": {
+    "command": "node",
+    "args": ["C:\path	ogent-relayingentrelay.js", "mcp"]
+} } } }
+```
+
+`send_message` is synchronous (default timeout 300 s) and inherits all the caveats
+below — it appends to the target session's real history and spends its tokens.
 
 ## Where sessions come from & how sends are delivered
 
@@ -110,6 +152,9 @@ are all local on this machine; no remote handling applies.
 - `agentrelay send <sessionId> <消息>` — 向目标 session 注入一条**真实用户回合**，
   对方 agent 处理后把回复打印到终端（同步无头 resume，消息经 stdin/直接进程传递，不受引号转义影响）
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
+- `agentrelay mcp` — 以 stdio MCP server 运行，把同样能力暴露为 4 个工具
+  （`list_sessions` / `read_session` / `send_message` / `get_paths`），可接入
+  Claude Code、Claude Desktop、Codex、ZCode 等 MCP 客户端，配置示例见上方英文段
 - Claude 的 SSH 远程工作区在 `list`/`read` 中以 `ssh:` 前缀标识（子代理转录 `agent-*.jsonl`
   不会列为 session）；`send` 会明确拒绝远程会话——CLI 在本机运行，无法在远端工作区恢复 session
 

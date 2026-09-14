@@ -1,13 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 const path = require('path');
+const { adaptersToUse, findSession } = require('../lib/core');
 const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPath } = require('../lib/util');
-
-const ADAPTERS = {
-  zcode: require('../lib/adapters/zcode'),
-  claude: require('../lib/adapters/claude'),
-  codex: require('../lib/adapters/codex'),
-};
 
 const HELP = `AgentRelay — read and message local Claude Code / Codex / ZCode sessions
 
@@ -16,6 +11,7 @@ Usage:
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
   agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json]
   agentrelay paths
+  agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
 Notes:
   - sessionId is matched across all agents unless --agent pins one.
@@ -39,27 +35,7 @@ function parseArgs(argv) {
   return flags;
 }
 
-function adaptersToUse(name) {
-  if (!name) return Object.values(ADAPTERS);
-  const a = ADAPTERS[name];
-  if (!a) die(`unknown agent "${name}" (expected zcode | claude | codex)`);
-  return [a];
-}
-
 function die(msg, code = 1) { console.error('error: ' + msg); process.exit(code); }
-
-function findSession(id, agentName) {
-  const hits = [];
-  for (const a of adaptersToUse(agentName)) {
-    if (!a.available()) continue;
-    if (a.name === 'zcode') { if (a.get(id)) hits.push(a); }
-    else {
-      const probe = a.list(100000).find((s) => s.id === id);
-      if (probe) hits.push(a);
-    }
-  }
-  return hits;
-}
 
 function cmdList(flags) {
   const rows = [];
@@ -131,13 +107,14 @@ function cmdPaths() {
 function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const flags = parseArgs(rest);
-  if (!cmd || flags.help) { console.log(HELP); process.exit(cmd ? 0 : 0); }
+  if (flags.help) { console.log(HELP); return; }
   switch (cmd) {
     case 'list': return cmdList(flags);
     case 'read': return cmdRead(flags);
     case 'send': return cmdSend(flags);
     case 'paths': return cmdPaths();
-    default: die(`unknown command "${cmd}"\n\n${HELP}`);
+    case 'mcp': return require('../lib/mcp').run();
+    default: console.log(HELP); process.exit(cmd ? 1 : 0);
   }
 }
 
