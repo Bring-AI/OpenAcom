@@ -62,6 +62,12 @@ when an id could be ambiguous or to skip the full scan.
 Everything runs locally against your existing installs; AgentRelay itself adds no
 service, port, or daemon.
 
+**Remote (SSH) Claude workspaces** appear in `list`/`read` with an `ssh:` prefix on
+the workspace; subagent transcripts (`agent-*.jsonl`) are never listed as sessions.
+`send` refuses remote sessions with a clear error — the CLI runs on your machine
+and cannot resume a session inside its remote workspace. Codex and ZCode sessions
+are all local on this machine; no remote handling applies.
+
 ## Per-agent requirements
 
 - **claude** — `claude` CLI on PATH, logged in, and its API endpoint reachable
@@ -104,6 +110,8 @@ service, port, or daemon.
 - `agentrelay send <sessionId> <消息>` — 向目标 session 注入一条**真实用户回合**，
   对方 agent 处理后把回复打印到终端（同步无头 resume，消息经 stdin/直接进程传递，不受引号转义影响）
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
+- Claude 的 SSH 远程工作区在 `list`/`read` 中以 `ssh:` 前缀标识（子代理转录 `agent-*.jsonl`
+  不会列为 session）；`send` 会明确拒绝远程会话——CLI 在本机运行，无法在远端工作区恢复 session
 
 安装：`npm install -g github:wwy155/agent-relay`（需 Node ≥ 22.5）。
 
