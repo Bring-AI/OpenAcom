@@ -1,6 +1,6 @@
 {
   "name": "agentrelay",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "One CLI to read and message local Claude Code / Codex / ZCode sessions",
   "license": "MIT",
   "bin": {

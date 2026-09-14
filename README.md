@@ -141,9 +141,13 @@ service, port, or daemon.
 
 **Remote (SSH) Claude workspaces** appear in `list`/`read` with an `ssh:` prefix on
 the workspace; subagent transcripts (`agent-*.jsonl`) are never listed as sessions.
-`send` refuses remote sessions with a clear error — the CLI runs on your machine
-and cannot resume a session inside its remote workspace. Codex and ZCode sessions
-are all local on this machine; no remote handling applies.
+`send` to a remote session is supported: AgentRelay resolves the SSH host from the
+`ssh:<host>:<cwd>` keys in `~/.claude.json`, finds the live session runner process
+(`--resume=<id>`) on that host, and injects the message into its stdin as a
+stream-json user turn — the turn runs inside the live process, so the reply streams
+to the desktop app in real time. If the session is not currently running, start it
+once from the desktop app first. Codex and ZCode sessions are local; no remote
+handling applies.
 
 ## Per-agent requirements
 
@@ -190,8 +194,10 @@ are all local on this machine; no remote handling applies.
 - `agentrelay mcp` — 以 stdio MCP server 运行，把同样能力暴露为 4 个工具
   （`list_sessions` / `read_session` / `send_message` / `get_paths`），可接入
   Claude Code、Claude Desktop、Codex、ZCode 等 MCP 客户端，配置示例见上方英文段
-- Claude 的 SSH 远程工作区在 `list`/`read` 中以 `ssh:` 前缀标识（子代理转录 `agent-*.jsonl`
-  不会列为 session）；`send` 会明确拒绝远程会话——CLI 在本机运行，无法在远端工作区恢复 session
+- Claude 的 SSH 远程会话：`list`/`read` 以 `ssh:` 前缀标识（子代理转录不会列为 session）；
+  `send` 支持远程会话——自动从 `~/.claude.json` 解析主机，在远程主机上找到活运行进程
+  （`--resume=<id>`），以 stream-json 用户回合注入其 stdin，回复实时流回桌面应用。
+  若目标会话当前未运行，先在桌面应用里启动一次
 
 安装：`npm install -g github:wwy155/agent-relay`（需 Node ≥ 22.5）。
 
