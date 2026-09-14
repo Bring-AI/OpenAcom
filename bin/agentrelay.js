@@ -2,6 +2,7 @@
 'use strict';
 const path = require('path');
 const { adaptersToUse, findSession } = require('../lib/core');
+const ADAPTERS = require('../lib/core').ADAPTERS;
 const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPath } = require('../lib/util');
 
 const HELP = `AgentRelay — read and message local Claude Code / Codex / ZCode sessions
@@ -10,6 +11,7 @@ Usage:
   agentrelay list  [--agent zcode|claude|codex] [--limit N] [--json]
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
   agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop]
+  agentrelay send  --fresh <message...>     new zcode session per message; visible in the desktop task list
   agentrelay paths
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
@@ -30,6 +32,7 @@ function parseArgs(argv) {
     else if (a === '--timeout') flags.timeout = parseInt(argv[++i], 10);
     else if (a === '--json') flags.json = true;
     else if (a === '--desktop') flags.desktop = true;
+    else if (a === '--fresh') flags.fresh = true;
     else if (a === '--help' || a === '-h') flags.help = true;
     else flags._.push(a);
   }
@@ -73,6 +76,20 @@ function cmdRead(flags) {
 }
 
 function cmdSend(flags) {
+  if (flags.fresh) {
+    if (!flags._.length) die('send --fresh needs: <message...>');
+    const message = flags._.join(' ');
+    const a = ADAPTERS.zcode;
+    try {
+      const { id, reply } = a.sendFresh(message, flags.timeout ? { timeoutMs: flags.timeout } : {});
+      if (flags.json) console.log(JSON.stringify({ ok: true, agent: 'zcode', sessionId: id, reply }, null, 2));
+      else {
+        console.log(reply || '(empty reply)');
+        if (id) console.error(`\n[session: ${id}]`);
+      }
+    } catch (e) { die(e.message); }
+    return;
+  }
   const [id, ...rest] = flags._;
   if (!id || !rest.length) die('send needs: <sessionId> <message...>');
   const message = rest.join(' ');

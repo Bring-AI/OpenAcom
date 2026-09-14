@@ -93,6 +93,24 @@ ZCode (`~/.zcode/cli/config.json`):
 `send_message` is synchronous (default timeout 300 s) and inherits all the caveats
 below — it appends to the target session's real history and spends its tokens.
 
+### Fresh sessions — recommended for agent-to-agent traffic (zcode)
+
+`agentrelay send --fresh <message>` runs the message in a **brand-new** zcode
+session (headless, synchronous reply, `sessionId` returned). New sessions appear
+in the desktop app's task list automatically, and opening one loads its full
+transcript — so your agent traffic stays visible in the desktop without ever
+injecting into a conversation the user has open (which the app would not
+re-render anyway: it keeps open sessions in memory and never re-reads the DB).
+
+```
+$ agentrelay send --fresh "Summarize the API research" --json
+{ "ok": true, "sessionId": "sess_...", "reply": "..." }
+```
+
+For a continuing back-and-forth, keep resuming that fresh session's id with the
+normal `send <id>` — it is a headless session no desktop tab holds, so nothing
+can go stale.
+
 ### Desktop mode (zcode, Windows)
 
 By default a zcode `send` runs headless, which writes to the session database
@@ -182,6 +200,12 @@ zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI`
 
 **注意**：`send` 会消耗目标 agent 的模型额度并永久写入其 session 历史；给正在忙碌的
 session 发送可能抢占当前轮次；session 存储格式是三家 agent 的本地私有格式，随版本可能变化。
+
+**fresh 会话模式（推荐的 agent 间通信）**：`agentrelay send --fresh <消息>` 在一个
+**全新** zcode 会话里执行消息（无头、同步拿回复、返回 sessionId）。新会话会自动出现在
+桌面应用的任务列表里，点开即可读完整记录——agent 流量对桌面始终可见，且完全不碰
+用户开着的会话（桌面不会重渲染已打开会话的外部写入）。需要多轮往来时，用普通
+`send <id>` 续聊这个新会话即可——它没有被任何桌面标签页持有，不存在失效问题。
 
 **desktop 模式（zcode / Windows）**：默认 zcode 的 `send` 走无头进程，直接写数据库，
 桌面窗口不会实时刷新。`agentrelay send <id> <消息> --desktop`（或 MCP 的 `desktop: true`）
