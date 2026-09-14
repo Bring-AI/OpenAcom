@@ -6,14 +6,14 @@ One CLI to read and message the sessions of your local coding agents — **Claud
 
 ```
 $ agentrelay list
-AGENT   SESSION                                    TITLE                              WORKSPACE      UPDATED
-------  -----------------------------------------  ---------------------------------  -------------  --------
-zcode   sess_5027cd0f-689f-4576-8509-8a76ac51fa36  实现zcode不同session间通信               C:\…\default   just now
-claude  275c102a-8cf7-4720-935d-96b6ddfd0af3       前端设计，请阅读前端设计稿                  F:\Bob          1h ago
-codex   01a07b4b-bc27-7fd1-89c0-dae8c883bf06       课题加一个。 可以进行搜索                  F:\Saba         5h ago
+AGENT   SESSION                                    TITLE                                 WORKSPACE       UPDATED
+------  -----------------------------------------  ------------------------------------  --------------  --------
+zcode   sess_5027cd0f-689f-4576-8509-8a76ac51fa36  Cross-session messaging PoC           C:\…\default    just now
+claude  275c102a-8cf7-4720-935d-96b6ddfd0af3       Frontend design review                F:\Bob          1h ago
+codex   01a07b4b-bc27-7fd1-89c0-dae8c883bf06       Add topic search to the course page   F:\Saba         5h ago
 
-$ agentrelay send 01a07b4b-bc27-7fd1-89c0-dae8c883bf06 "接口调研完成，请继续下一步"
-（目标 session 收到一条真实用户回合，处理完毕后回复打印在这里）
+$ agentrelay send 01a07b4b-bc27-7fd1-89c0-dae8c883bf06 "Research is done, please continue with the next step"
+(the target session receives a real user turn; its reply is printed here)
 ```
 
 `send` is a synchronous headless resume: the target session receives a **genuine
