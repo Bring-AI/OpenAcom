@@ -93,6 +93,21 @@ ZCode (`~/.zcode/cli/config.json`):
 `send_message` is synchronous (default timeout 300 s) and inherits all the caveats
 below — it appends to the target session's real history and spends its tokens.
 
+### Desktop mode (zcode, Windows)
+
+By default a zcode `send` runs headless, which writes to the session database
+behind the desktop app's back — the app's window will not live-refresh (its UI
+keeps its own in-memory state and never re-reads the DB). `--desktop` (CLI) or
+`desktop: true` (MCP) takes a different route: it locates the session in the
+desktop app's sidebar via UI Automation, types the message into the real
+composer and presses Enter. The turn runs **inside the desktop app**, so its
+window updates live and the message chain stays native.
+
+Trade-offs: Windows only; requires the ZCode desktop app to be running; steals
+window focus for a few seconds (typing is a real keyboard event); matches the
+session by title prefix; returns no reply text (the turn runs asynchronously in
+the app).
+
 ## Where sessions come from & how sends are delivered
 
 | Agent  | Sessions read from                     | Send channel                                     |
@@ -167,5 +182,11 @@ zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI`
 
 **注意**：`send` 会消耗目标 agent 的模型额度并永久写入其 session 历史；给正在忙碌的
 session 发送可能抢占当前轮次；session 存储格式是三家 agent 的本地私有格式，随版本可能变化。
+
+**desktop 模式（zcode / Windows）**：默认 zcode 的 `send` 走无头进程，直接写数据库，
+桌面窗口不会实时刷新。`agentrelay send <id> <消息> --desktop`（或 MCP 的 `desktop: true`）
+改走 UI 自动化：在桌面应用侧边栏定位会话 → 在真实输入框键入 → 回车发送。回合由桌面
+应用自己执行，窗口实时刷新、消息链原生连续。代价：仅 Windows、需要桌面应用在运行、
+发送瞬间会抢占窗口焦点、按标题前缀匹配会话、拿不到回复文本（回合在应用内异步执行）。
 
 MIT licensed.

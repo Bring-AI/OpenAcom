@@ -9,7 +9,7 @@ const HELP = `AgentRelay — read and message local Claude Code / Codex / ZCode 
 Usage:
   agentrelay list  [--agent zcode|claude|codex] [--limit N] [--json]
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
-  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json]
+  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop]
   agentrelay paths
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
@@ -29,6 +29,7 @@ function parseArgs(argv) {
     else if (a === '--last' || a === '-n') flags.last = parseInt(argv[++i], 10);
     else if (a === '--timeout') flags.timeout = parseInt(argv[++i], 10);
     else if (a === '--json') flags.json = true;
+    else if (a === '--desktop') flags.desktop = true;
     else if (a === '--help' || a === '-h') flags.help = true;
     else flags._.push(a);
   }
@@ -79,6 +80,15 @@ function cmdSend(flags) {
   if (hits.length === 0) die(`session not found: ${id} (run "agentrelay list")`);
   if (hits.length > 1) die(`session id exists in ${hits.map((h) => h.name).join(' & ')}; pass --agent`);
   const a = hits[0];
+  if (flags.desktop) {
+    if (a.name !== 'zcode') die('--desktop is only implemented for zcode sessions');
+    if (typeof a.sendDesktop !== 'function') die('desktop mode requires Windows');
+    try {
+      const out = a.sendDesktop(id, message);
+      console.log(out || 'OK');
+    } catch (e) { die(e.message); }
+    return;
+  }
   const opts = {};
   if (flags.timeout) opts.timeoutMs = flags.timeout;
   try {
