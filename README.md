@@ -2,7 +2,7 @@
 
 **English** · [中文说明](#中文说明)
 
-One CLI to read and message the sessions of your local coding agents — **Claude Code**, **Codex**, and **ZCode**.
+One CLI to read and message the sessions of your local and remote coding agents — **Claude Code**, **Codex**, and **ZCode**.
 
 ```
 $ agentrelay list
@@ -184,7 +184,7 @@ handling applies.
 
 ## 中文说明
 
-**AgentRelay**：一个 CLI，读取并给本地的 **Claude Code / Codex / ZCode** session 发消息。
+**AgentRelay**：一个 CLI，读取并给本地及远程的 **Claude Code / Codex / ZCode** session 发消息。
 
 - `agentrelay list` — 三家 agent 的 session 混合列表（标题、工作区、更新时间）
 - `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨三家匹配 id）

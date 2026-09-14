@@ -5,7 +5,7 @@ const { adaptersToUse, findSession } = require('../lib/core');
 const ADAPTERS = require('../lib/core').ADAPTERS;
 const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPath } = require('../lib/util');
 
-const HELP = `AgentRelay — read and message local Claude Code / Codex / ZCode sessions
+const HELP = `AgentRelay — read and message local and remote Claude Code / Codex / ZCode sessions
 
 Usage:
   agentrelay list  [--agent zcode|claude|codex] [--limit N] [--json]
