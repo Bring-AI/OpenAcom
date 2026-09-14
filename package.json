@@ -22,5 +22,8 @@
     "sessions",
     "relay"
   ],
-  "private": false
+  "private": false,
+  "scripts": {
+    "update": "git pull && npm install -g ."
+  }
 }
