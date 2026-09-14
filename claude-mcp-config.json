@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "codex-relay": {
-      "command": "python",
-      "args": ["C:\\Users\\63494\\Documents\\Codex\\2026-09-12\\new-chat\\mcp_relay_server.py"]
-    }
-  }
-}

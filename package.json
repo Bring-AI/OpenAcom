@@ -1,0 +1,26 @@
+{
+  "name": "agentrelay",
+  "version": "0.2.0",
+  "description": "One CLI to read and message local Claude Code / Codex / ZCode sessions",
+  "license": "MIT",
+  "bin": {
+    "agentrelay": "bin/agentrelay.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wwy155/claude-codex-mcp-relay.git"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "zcode",
+    "agent",
+    "cli",
+    "sessions",
+    "relay"
+  ],
+  "private": false
+}

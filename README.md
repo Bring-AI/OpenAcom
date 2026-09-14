@@ -1,75 +1,118 @@
-# Claude ↔ Codex MCP Relay
+# AgentRelay
 
-![Relay overview](relay-banner.png)
+**English** · [中文说明](#中文说明)
 
-**English (default)** · [切换到中文 / Switch to Chinese](#中文)
+One CLI to read and message the sessions of your local coding agents — **Claude Code**, **Codex**, and **ZCode**.
 
-This project connects Claude Desktop and Codex through a local MCP bridge. Both directions create **real conversation turns** in the destination chat history; messages are not only written to a sidecar file.
+```
+$ agentrelay list
+AGENT   SESSION                                    TITLE                              WORKSPACE      UPDATED
+------  -----------------------------------------  ---------------------------------  -------------  --------
+zcode   sess_5027cd0f-689f-4576-8509-8a76ac51fa36  实现zcode不同session间通信               C:\…\default   just now
+claude  275c102a-8cf7-4720-935d-96b6ddfd0af3       前端设计，请阅读前端设计稿                  F:\Bob          1h ago
+codex   01a07b4b-bc27-7fd1-89c0-dae8c883bf06       课题加一个。 可以进行搜索                  F:\Saba         5h ago
 
-## How it works
-
-- **Claude → Codex:** Claude calls `send_to_codex_thread` with an exact Codex `threadId` and `prompt`. Codex receives a new user turn.
-- **Codex → Claude:** Codex calls `list_claude_sessions`, then `send_to_claude_session` with the exact Claude `sessionId`, Desktop `taskId`, and project directory.
-- The bridge validates the destination, delivers locally, and returns a correlated receipt/reply.
-
-No public port is opened and no third-party relay is used. Inbox/transcript tools are for receipts and inspection; they do not replace conversation messages.
-
-## Quick start
-
-Merge `claude-mcp-config.json` into `%APPDATA%\\Claude\\claude_desktop_config.json`, set `CODEX_BRIDGE_DESKTOP_TASKS` to `1`, and restart Claude Desktop.
-
-Claude → Codex example:
-
-```json
-{
-  "threadId": "01a07b4b-bc27-7fd1-89c0-dae8c883bf06",
-  "prompt": "Please continue the implementation."
-}
+$ agentrelay send 01a07b4b-bc27-7fd1-89c0-dae8c883bf06 "接口调研完成，请继续下一步"
+（目标 session 收到一条真实用户回合，处理完毕后回复打印在这里）
 ```
 
-Codex → Claude uses the exact identifiers returned by `list_claude_sessions`:
+`send` is a synchronous headless resume: the target session receives a **genuine
+user turn** — visible in its own history in the agent's UI — runs one agent turn,
+and the reply is printed to your terminal. This is the building block for
+cross-agent orchestration: let a ZCode session drive a Claude session, script
+hand-offs between agents, or poke a long-running session from CI.
 
-```json
-{
-  "target": "<sessionId>",
-  "expectedCwd": "F:\\Bob",
-  "expectedTaskId": "<taskId>",
-  "message": "Continue with the next step",
-  "waitSec": 30
-}
-```
+## Install
 
-## AgentRelay (new)
-
-One CLI to read and message sessions of all three local agents — **Claude Code, Codex, and ZCode**:
+Requires Node.js ≥ 22.5 (uses the built-in `node:sqlite`).
 
 ```bash
-agentrelay list                     # sessions across claude/codex/zcode
-agentrelay read  <sessionId>        # last turns of any session
-agentrelay send  <sessionId> <msg>  # deliver a real turn, print the reply
-agentrelay paths                    # detected storage/CLI paths
+npm install -g github:wwy155/claude-codex-mcp-relay
 ```
 
-`send` performs a synchronous headless resume: the target session gets a genuine
-user turn in its own history and its reply is printed locally. See
-[`agentrelay/README.md`](agentrelay/README.md) for install and per-agent requirements.
+or from a clone:
 
-## 中文
+```bash
+git clone https://github.com/wwy155/claude-codex-mcp-relay
+npm install -g ./claude-codex-mcp-relay
+```
 
-这个项目让 Claude Desktop 和 Codex 通过本机 MCP 中继互发**真正的对话消息**。消息会出现在目标 task/session 的正常对话历史中，而不是只写入文件。
+or run in place without installing: `node bin/agentrelay.js …`
 
-- Claude → Codex：调用 `send_to_codex_thread`，传入精确的 `threadId` 和 `prompt`，Codex 会收到一条新的 user turn。
-- Codex → Claude：先调用 `list_claude_sessions`，再用精确的 `sessionId`、Desktop `taskId` 和项目目录调用 `send_to_claude_session`。
-- `read_claude_inbox`、transcript 等接口只用于读取回执和状态，不代替对话消息。
+## Commands
 
-中继会校验目标 ID 和项目目录，全程不开放公网端口。
+| Command | What it does |
+|---|---|
+| `agentrelay list [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table across all three agents |
+| `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
+| `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply |
+| `agentrelay paths` | Show detected storage locations and CLI paths |
 
-**AgentRelay（新增）**：`agentrelay/` 目录下的统一 CLI，可列出/读取/给 Claude Code、Codex、ZCode 三家的本地 session 发消息（`send` 为同步注入，回复直接返回），详见 [agentrelay/README.md](agentrelay/README.md)。
+Session ids are matched across all three agents automatically; pass `--agent`
+when an id could be ambiguous or to skip the full scan.
 
-## Files
+## Where sessions come from & how sends are delivered
 
-- `agentrelay/` — **AgentRelay**: unified CLI to list/read/message Claude · Codex · ZCode sessions
-- `mcp_relay_server.py` — local MCP stdio server
-- `claude-mcp-config.json` — Claude Desktop configuration snippet
-- `MCP-RELAY-SETUP.md` — setup details
-- `relay-codex.ps1` — legacy local inbox/outbox helper
+| Agent  | Sessions read from                     | Send channel                                     |
+|--------|----------------------------------------|--------------------------------------------------|
+| claude | `~/.claude/projects/**/*.jsonl`        | `claude --resume <id> -p` (prompt via stdin)     |
+| codex  | `~/.codex/sessions/**/rollout-*.jsonl` | `codex exec resume <id> -` (prompt via stdin)    |
+| zcode  | `~/.zcode/cli/db/db.sqlite`            | `zcode.cjs --resume <id> --prompt <msg>`         |
+
+Everything runs locally against your existing installs; AgentRelay itself adds no
+service, port, or daemon.
+
+## Per-agent requirements
+
+- **claude** — `claude` CLI on PATH, logged in, and its API endpoint reachable
+  (check `ANTHROPIC_BASE_URL` if you use a relay).
+- **codex** — `codex` CLI on PATH and authenticated (`~/.codex/auth.json`).
+- **zcode** — the desktop install's `zcode.cjs` is auto-detected from
+  `ZCODE_WINDOWS_APP_INSTALL_DIR` / `%LOCALAPPDATA%\Programs\ZCode`
+  (override with `AGENTRELAY_ZCODE_CLI`). Headless sends additionally need a
+  model provider in `~/.zcode/cli/config.json`:
+
+  ```json
+  {
+    "provider": {
+      "bigmodel": {
+        "kind": "anthropic",
+        "options": { "apiKey": "sk-...", "baseURL": "https://open.bigmodel.cn/api/anthropic" }
+      }
+    },
+    "model": "bigmodel/GLM-5.3"
+  }
+  ```
+
+  Note `"model"` must be a `"provider/model"` string. The desktop app keeps its
+  own copy under `~/.zcode/v2/config.json`, which the headless CLI does **not**
+  read — hence this file.
+
+## Caveats
+
+- `send` spends tokens on the target agent and permanently appends to that session's history.
+- Sending to a session that is currently busy in its own UI may preempt the active turn.
+- Session storage layouts are the agents' local, undocumented formats and may change between versions.
+- Prompt payloads always travel via stdin or a directly-spawned process — never through a shell — so arbitrary quotes/newlines in messages are safe.
+
+## 中文说明
+
+**AgentRelay**：一个 CLI，读取并给本地的 **Claude Code / Codex / ZCode** session 发消息。
+
+- `agentrelay list` — 三家 agent 的 session 混合列表（标题、工作区、更新时间）
+- `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨三家匹配 id）
+- `agentrelay send <sessionId> <消息>` — 向目标 session 注入一条**真实用户回合**，
+  对方 agent 处理后把回复打印到终端（同步无头 resume，消息经 stdin/直接进程传递，不受引号转义影响）
+- `agentrelay paths` — 显示探测到的存储路径与 CLI
+
+安装：`npm install -g github:wwy155/claude-codex-mcp-relay`（需 Node ≥ 22.5）。
+
+**发送的前提**：claude 需要 `claude` CLI 在 PATH 且 API 可达；codex 需要 `codex` CLI 已认证；
+zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI` 指定），且
+`~/.zcode/cli/config.json` 里要有 provider/model 配置（`model` 必须是 `"provider/model"` 字符串，
+桌面端的 `~/.zcode/v2/config.json` 对无头 CLI 不生效），示例见上方。
+
+**注意**：`send` 会消耗目标 agent 的模型额度并永久写入其 session 历史；给正在忙碌的
+session 发送可能抢占当前轮次；session 存储格式是三家 agent 的本地私有格式，随版本可能变化。
+
+MIT licensed.
