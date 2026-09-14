@@ -11,7 +11,7 @@ Usage:
   agentrelay list  [--agent zcode|claude|codex] [--limit N] [--json]
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
   agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
-  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop]  resume a session
+  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait]  resume a session (--wait blocks for the reply)
   agentrelay paths
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
@@ -33,6 +33,7 @@ function parseArgs(argv) {
     else if (a === '--json') flags.json = true;
     else if (a === '--desktop') flags.desktop = true;
     else if (a === '--fresh') flags.fresh = true;
+    else if (a === '--wait') flags.wait = true;
     else if (a === '--help' || a === '-h') flags.help = true;
     else flags._.push(a);
   }
@@ -86,7 +87,10 @@ function cmdSend(flags) {
     if (!message) die('send needs: <message...> (fresh session)  |  <sessionId> <message...> (resume)');
     const a = ADAPTERS.zcode;
     try {
-      const { id, reply } = a.sendFresh(message, flags.timeout ? { timeoutMs: flags.timeout } : {});
+      const optsF = {};
+      if (flags.timeout) optsF.timeoutMs = flags.timeout;
+      optsF.noWait = !flags.wait;
+      const { id, reply } = a.sendFresh(message, optsF);
       if (flags.json) console.log(JSON.stringify({ ok: true, agent: 'zcode', sessionId: id, reply }, null, 2));
       else {
         console.log(reply || '(empty reply)');
@@ -113,6 +117,7 @@ function cmdSend(flags) {
   }
   const opts = {};
   if (flags.timeout) opts.timeoutMs = flags.timeout;
+  opts.noWait = !flags.wait;
   try {
     const reply = a.send(id, message, opts);
     if (flags.json) console.log(JSON.stringify({ ok: true, agent: a.name, sessionId: id, reply }, null, 2));

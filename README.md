@@ -109,6 +109,11 @@ $ agentrelay send "Summarize the API research" --json
 
 `send` with no sessionId defaults to this; `--fresh` is the explicit form.
 
+Sends are **fire-and-forget by default**: the turn runs in the background, the
+command returns immediately, and the reply lands in the session transcript (read
+it with `agentrelay read`). Add `--wait` to block until the target finishes and
+print its reply instead. The same choice exists over MCP (`wait`, default false).
+
 For a continuing back-and-forth, keep resuming that fresh session's id with the
 normal `send <id>` — it is a headless session no desktop tab holds, so nothing
 can go stale.
@@ -188,8 +193,8 @@ handling applies.
 
 - `agentrelay list` — 三家 agent 的 session 混合列表（标题、工作区、更新时间）
 - `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨三家匹配 id）
-- `agentrelay send <sessionId> <消息>` — 向目标 session 注入一条**真实用户回合**，
-  对方 agent 处理后把回复打印到终端（同步无头 resume，消息经 stdin/直接进程传递，不受引号转义影响）
+- `agentrelay send <消息>` / `send <sessionId> <消息>` — 注入**真实用户回合**。默认异步
+  （发完即返回，回复落在会话转录里，用 `read` 查看）；加 `--wait` 则阻塞等回复并打印
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
 - `agentrelay mcp` — 以 stdio MCP server 运行，把同样能力暴露为 4 个工具
   （`list_sessions` / `read_session` / `send_message` / `get_paths`），可接入
