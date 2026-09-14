@@ -69,7 +69,7 @@ Claude Desktop (`%APPDATA%\Claude\claude_desktop_config.json`):
 ```json
 { "mcpServers": { "agentrelay": {
     "command": "node",
-    "args": ["C:\path\to\agent-relay\bin\agentrelay.js", "mcp"]
+    "args": ["C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"]
 } } }
 ```
 
@@ -78,7 +78,7 @@ Codex (`~/.codex/config.toml`):
 ```toml
 [mcp_servers.agentrelay]
 command = "node"
-args = ["C:\path	ogent-relayingentrelay.js", "mcp"]
+args = ['C:\path\to\agent-relay\bin\agentrelay.js', 'mcp']
 ```
 
 ZCode (`~/.zcode/cli/config.json`):
@@ -86,7 +86,7 @@ ZCode (`~/.zcode/cli/config.json`):
 ```json
 { "mcp": { "servers": { "agentrelay": {
     "command": "node",
-    "args": ["C:\path	ogent-relayingentrelay.js", "mcp"]
+    "args": ["C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"]
 } } } }
 ```
 
