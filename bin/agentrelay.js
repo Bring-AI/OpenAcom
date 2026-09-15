@@ -153,6 +153,7 @@ function main() {
     case 'send': return cmdSend(flags);
     case 'paths': return cmdPaths();
     case 'mcp': return require('../lib/mcp').run();
+    case 'mcp-http': return require('../lib/mcp-http').runHttp(parseInt(rest[0], 10) || 9321);
     default: console.log(HELP); process.exit(cmd ? 1 : 0);
   }
 }

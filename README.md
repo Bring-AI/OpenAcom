@@ -90,7 +90,7 @@ ZCode (`~/.zcode/cli/config.json`):
 } } } }
 ```
 
-`send_message` is synchronous (default timeout 300 s) and inherits all the caveats
+`send_message` is fire-and-forget by default (see above); `wait:true` blocks. All caveats apply
 below — it appends to the target session's real history and spends its tokens.
 
 ### Fresh sessions — recommended for agent-to-agent traffic (zcode)
