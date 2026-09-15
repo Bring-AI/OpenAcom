@@ -16,11 +16,14 @@ $ agentrelay send 01a07b4b-bc27-7fd1-89c0-dae8c883bf06 "Research is done, please
 (the target session receives a real user turn; its reply is printed here)
 ```
 
-`send` is a synchronous headless resume: the target session receives a **genuine
-user turn** — visible in its own history in the agent's UI — runs one agent turn,
-and the reply is printed to your terminal. This is the building block for
-cross-agent orchestration: let a ZCode session drive a Claude session, script
-hand-offs between agents, or poke a long-running session from CI.
+`send` delivers a **genuine user turn** to the target session. By default it is
+fire-and-forget (the reply lands in the transcript; `--wait` blocks for it), and
+for zcode it is CDP-first: when the desktop app runs with
+`--remote-debugging-port`, the message enters through the app's real composer
+(live refresh, native chain, steer of a running turn), otherwise it runs
+headless. This is the building block for cross-agent orchestration: let a ZCode
+session drive a Claude session, script hand-offs between agents, or poke a
+long-running session from CI.
 
 ## Install
 
@@ -129,7 +132,8 @@ another machine, AgentRelay also speaks streamable HTTP:
 
 ```powershell
 # on the Windows machine (one-time per boot):
-powershell -ExecutionPolicy Bypass -File toolselay-remote-up.ps1 -SshHost root@your-server
+powershell -ExecutionPolicy Bypass -File tools
+elay-remote-up.ps1 -SshHost root@your-server
 # starts: local MCP on 127.0.0.1:9321 + an SSH reverse tunnel server:9321 -> local:9321
 ```
 
@@ -141,6 +145,58 @@ Then on the server, register it in Claude Code (`~/.claude.json`):
 
 The remote agent gets the same four tools operating on your **local** sessions.
 Traffic stays inside the SSH tunnel; both endpoints bind localhost only.
+## How it works (the interesting parts)
+
+### ZCode provides no session API - how sending was made possible
+
+ZCode desktop keeps every conversation in a local SQLite database
+(`~/.zcode/cli/db/db.sqlite`, `message` + `part` tables). AgentRelay reads
+sessions straight from that DB. Sending required reverse-engineering three
+delivery routes:
+
+- **Headless resume**: the CLI bundled with the desktop app
+  (`zcode.cjs --resume <id> --prompt`) materializes the session in its own
+  process and runs the turn there. Needs a model provider in
+  `~/.zcode/cli/config.json` (`"model": "provider/model-id"`); the desktop app's
+  copy under `~/.zcode/v2/config.json` is not read by headless runs.
+- **Why the desktop window does not refresh on external writes**: the app is a
+  single-writer architecture. The UI renders state held in its app-server's
+  memory; the database is its persistence log, not a shared bus. External
+  inserts are never re-read (verified: queue-table rows written by outside
+  processes stay unclaimed; there is no TCP/pipe control surface; injecting a
+  row into the internal session_input queue is ignored). Messages still land and
+  the agent still processes them - only the open window does not repaint.
+- **CDP route (default when available)**: start the app with
+  `--remote-debugging-port=9222` and AgentRelay drives the renderer directly -
+  locate the session row in the sidebar, focus the composer, insert the message
+  as trusted input, press Enter. The turn runs *inside* the app: live refresh,
+  native message chain, and with `zcodeInteractionBehavior: "guide"` a message
+  arriving mid-turn steers the running agent instead of queueing. Works while
+  the window is backgrounded or minimized (renderer-level events, no OS focus
+  steal). This is the only way to deliver into a conversation the user has open.
+
+### Remote (SSH) Claude sessions - reading a mirror, writing to the live brain
+
+Claude sessions on SSH workspaces keep only a transcript mirror locally; the
+live process (`ccd-cli --resume=<id> --input-format stream-json`) runs on the
+server and consumes user turns from its stdin. AgentRelay:
+
+1. resolves the host from the `ssh:<host>:<cwd>` project keys in
+   `~/.claude.json` (e.g. `ssh:root@1.2.3.4:/root/TokenGateway`);
+2. finds the live runner over SSH by its `--resume=<id>` flag;
+3. writes one stream-json user turn into `/proc/<pid>/fd/0`.
+
+The turn executes inside the live process, so the reply streams back to the
+Claude desktop in real time and the chain stays native.
+
+### Remote agents driving local sessions
+
+stdio MCP servers can only be spawned by local clients, so for agents on other
+machines AgentRelay also speaks streamable HTTP on `127.0.0.1:9321`, paired with
+an SSH reverse tunnel (`tools/relay-remote-up.ps1`). The remote client registers
+`http://127.0.0.1:9321/mcp` and gets the same tools operating on your local
+sessions; traffic never leaves the SSH tunnel.
+
 ### Desktop mode (zcode, Windows)
 
 By default a zcode `send` runs headless, which writes to the session database
@@ -256,9 +312,44 @@ session 发送可能抢占当前轮次；session 存储格式是三家 agent 的
 用户开着的会话（桌面不会重渲染已打开会话的外部写入）。需要多轮往来时，用普通
 `send <id>` 续聊这个新会话即可——它没有被任何桌面标签页持有，不存在失效问题。
 
+## 实现原理（重点）
+
+### ZCode 没有官方 session API，发送是怎么做出来的
+
+ZCode 桌面把全部对话存在本地 SQLite（`~/.zcode/cli/db/db.sqlite`，`message`+`part`
+表）。读取直接查库；发送逆出了三条路：
+
+- **无头 resume**：桌面自带的 CLI（`zcode.cjs --resume <id> --prompt`）在自己的进程里
+  物化会话并执行回合。需要在 `~/.zcode/cli/config.json` 配模型
+  （`"model": "provider/model-id"`）；桌面的 `~/.zcode/v2/config.json` 对无头无效。
+- **为什么外部写入后桌面窗口不刷新**：桌面是"单写入者"架构——界面渲染的是 app-server
+  内存里的状态，数据库只是它的持久化日志而非共享总线。外部插入永远不会被重读（实测：
+  外部写的队列表行无人认领；无 TCP/管道控制面；直接插 `session_input` 也被无视）。
+  消息其实已送达、agent 也处理了，只是开着的窗口不重绘。
+- **CDP 路线（可用时默认）**：桌面以 `--remote-debugging-port=9222` 启动后，AgentRelay
+  直接驱动渲染层——侧边栏定位会话行、聚焦输入框、以受信任输入插入消息、回车。回合在
+  应用**内部**执行：实时刷新、消息链原生；配合 `zcodeInteractionBehavior: "guide"`，
+  回合进行中到达的消息直接**抢占引导**运行中的 agent 而非排队。窗口最小化/后台照常
+  （渲染层事件，不抢 OS 焦点）。这是向"用户正开着的会话"投递的唯一途径。
+
+### 远程（SSH）Claude 会话——本地是镜像，大脑在服务器
+
+SSH 工作区的 Claude 会话在本地只有转录镜像；活进程
+（`ccd-cli --resume=<id> --input-format stream-json`）跑在服务器上、从 stdin 消费用户
+回合。AgentRelay：① 从 `~/.claude.json` 的 `ssh:<host>:<cwd>` 项目键解析主机；
+② SSH 上去按 `--resume=<id>` 找活进程；③ 往 `/proc/<pid>/fd/0` 写一行 stream-json
+用户回合。回合在活进程内执行，回复实时流回 Claude 桌面，链原生。
+
+### 远程 agent 操控本地 session
+
+stdio MCP 只能被同机客户端拉起，故另提供 HTTP 传输（127.0.0.1:9321）+ SSH 反向隧道
+（`toolselay-remote-up.ps1`）。远端注册 `http://127.0.0.1:9321/mcp` 即获得操作本地
+session 的同一组工具，流量不出 SSH 隧道。
+
 **远程 agent 接入（HTTP 传输）**：stdio MCP 只能被同机客户端拉起。跑在服务器上的
 agent（如 SSH 里的 Claude Code）改用 HTTP 传输：Windows 上运行
-`toolselay-remote-up.ps1`（启动本地 127.0.0.1:9321 的 MCP + SSH 反向隧道
+`tools
+elay-remote-up.ps1`（启动本地 127.0.0.1:9321 的 MCP + SSH 反向隧道
 `服务器:9321 → 本地:9321`），再在服务器的 `~/.claude.json` 注册
 `{"mcpServers":{"agentrelay":{"type":"http","url":"http://127.0.0.1:9321/mcp"}}}`。
 远程 agent 即获得操作**本地** session 的同一组工具；流量全程走 SSH 隧道，两端只绑
