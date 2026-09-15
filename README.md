@@ -122,6 +122,25 @@ For a continuing back-and-forth, keep resuming that fresh session's id with the
 normal `send <id>` — it is a headless session no desktop tab holds, so nothing
 can go stale.
 
+### Remote agents (e.g. Claude Code on an SSH server) - HTTP transport
+
+stdio MCP servers can only be spawned by local clients. For agents running on
+another machine, AgentRelay also speaks streamable HTTP:
+
+```powershell
+# on the Windows machine (one-time per boot):
+powershell -ExecutionPolicy Bypass -File toolselay-remote-up.ps1 -SshHost root@your-server
+# starts: local MCP on 127.0.0.1:9321 + an SSH reverse tunnel server:9321 -> local:9321
+```
+
+Then on the server, register it in Claude Code (`~/.claude.json`):
+
+```json
+{ "mcpServers": { "agentrelay": { "type": "http", "url": "http://127.0.0.1:9321/mcp" } } }
+```
+
+The remote agent gets the same four tools operating on your **local** sessions.
+Traffic stays inside the SSH tunnel; both endpoints bind localhost only.
 ### Desktop mode (zcode, Windows)
 
 By default a zcode `send` runs headless, which writes to the session database
@@ -236,6 +255,14 @@ session 发送可能抢占当前轮次；session 存储格式是三家 agent 的
 桌面应用的任务列表里，点开即可读完整记录——agent 流量对桌面始终可见，且完全不碰
 用户开着的会话（桌面不会重渲染已打开会话的外部写入）。需要多轮往来时，用普通
 `send <id>` 续聊这个新会话即可——它没有被任何桌面标签页持有，不存在失效问题。
+
+**远程 agent 接入（HTTP 传输）**：stdio MCP 只能被同机客户端拉起。跑在服务器上的
+agent（如 SSH 里的 Claude Code）改用 HTTP 传输：Windows 上运行
+`toolselay-remote-up.ps1`（启动本地 127.0.0.1:9321 的 MCP + SSH 反向隧道
+`服务器:9321 → 本地:9321`），再在服务器的 `~/.claude.json` 注册
+`{"mcpServers":{"agentrelay":{"type":"http","url":"http://127.0.0.1:9321/mcp"}}}`。
+远程 agent 即获得操作**本地** session 的同一组工具；流量全程走 SSH 隧道，两端只绑
+localhost。重启电脑后需重跑 relay-remote-up.ps1。
 
 **desktop 模式（zcode / Windows）**：默认 zcode 的 `send` 走无头进程，直接写数据库，
 桌面窗口不会实时刷新。`agentrelay send <id> <消息> --desktop`（或 MCP 的 `desktop: true`）
