@@ -6,15 +6,21 @@
 // Usage: node cdp-send.js <titlePrefix> <message> [port]
 
 const port = process.argv[4] || '9222';
+const t0 = Date.now();
+const stage = (m) => console.error(`[cdp +${Date.now() - t0}ms] ${m}`);
+const watchdog = setTimeout(() => { console.error(`[cdp +${Date.now() - t0}ms] WATCHDOG: stuck`); process.exit(3); }, 25000);
 const titlePrefix = process.argv[2];
 const message = process.argv[3];
 
 if (!titlePrefix || !message) { console.log('usage: node cdp-send.js <titlePrefix> <message> [port]'); process.exit(1); }
 
 (async () => {
+  stage('fetching /json');
   const targets = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json()).catch(() => null);
   if (!targets) { console.log('ERR: CDP port ' + port + ' not reachable - start ZCode via tools/start-zcode-cdp.ps1'); process.exit(2); }
-  const page = targets.find((t) => t.type === 'page');
+  // skip overlay windows (tray indicator etc.): main window serves the app from file://
+  stage(`targets: ${targets.length}`);
+  const page = targets.find((t) => t.type === 'page' && /^file:|^http:/.test(t.url || ''));
   if (!page) { console.log('ERR: no page target'); process.exit(2); }
 
   const ws = new WebSocket(page.webSocketDebuggerUrl);
@@ -75,9 +81,10 @@ if (!titlePrefix || !message) { console.log('usage: node cdp-send.js <titlePrefi
     type, key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, text: type === 'keyChar' ? '\r' : undefined,
   });
   await key('rawKeyDown');
-  await key('keyChar');
+  await key('char');
   await key('keyUp');
   await sleep(300);
+  clearTimeout(watchdog);
   console.log('OK sent via desktop UI (CDP)');
   ws.close(); process.exit(0);
 })().catch((e) => { console.log('ERR: ' + e.message); process.exit(1); });

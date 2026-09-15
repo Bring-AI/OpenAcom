@@ -124,14 +124,26 @@ By default a zcode `send` runs headless, which writes to the session database
 behind the desktop app's back — the app's window will not live-refresh (its UI
 keeps its own in-memory state and never re-reads the DB). `--desktop` (CLI) or
 `desktop: true` (MCP) takes a different route: it locates the session in the
-desktop app's sidebar via UI Automation, types the message into the real
-composer and presses Enter. The turn runs **inside the desktop app**, so its
-window updates live and the message chain stays native.
+desktop app's sidebar and delivers the message through the app's real composer
+over CDP (renderer-level trusted input events — no focus stealing). The turn
+runs **inside the desktop app**, so its window updates live, the message chain
+stays native, and if the session is mid-turn the message **steers** it
+(requires the desktop setting `zcodeInteractionBehavior: "guide"`).
 
-Trade-offs: Windows only; requires the ZCode desktop app to be running; steals
-window focus for a few seconds (typing is a real keyboard event); matches the
-session by title prefix; returns no reply text (the turn runs asynchronously in
-the app).
+One-time setup:
+
+```powershell
+# quit ZCode first (tray icon -> exit), then:
+powershell -ExecutionPolicy Bypass -File tools\start-zcode-cdp.ps1
+```
+
+This relaunches the app with `--remote-debugging-port=9222` (CDP is a local
+control surface — only enable it on a machine you trust). To make it permanent,
+add that flag to your ZCode shortcut's Target instead.
+
+Trade-offs: Windows only; the desktop app must be running with the CDP flag;
+matches the session by title prefix; returns no reply text (the turn runs
+asynchronously in the app).
 
 ## Where sessions come from & how sends are delivered
 
@@ -223,8 +235,13 @@ session 发送可能抢占当前轮次；session 存储格式是三家 agent 的
 
 **desktop 模式（zcode / Windows）**：默认 zcode 的 `send` 走无头进程，直接写数据库，
 桌面窗口不会实时刷新。`agentrelay send <id> <消息> --desktop`（或 MCP 的 `desktop: true`）
-改走 UI 自动化：在桌面应用侧边栏定位会话 → 在真实输入框键入 → 回车发送。回合由桌面
-应用自己执行，窗口实时刷新、消息链原生连续。代价：仅 Windows、需要桌面应用在运行、
-发送瞬间会抢占窗口焦点、按标题前缀匹配会话、拿不到回复文本（回合在应用内异步执行）。
+改走 CDP：在桌面应用侧边栏定位会话 → 向真实输入框注入受信任输入事件 → 回车发送。
+回合由桌面应用自己执行——**窗口实时刷新、消息链原生**；若该会话正在跑回合，消息会以
+guide 模式抢占（运行中的 agent 立即看到；需桌面设置 `zcodeInteractionBehavior: "guide"`）。
+
+一次性准备：托盘退出 ZCode 后运行 `tools\start-zcode-cdp.ps1`（以
+`--remote-debugging-port=9222` 重启应用；CDP 是本地控制面，只在可信机器上开启；
+也可把该参数加进快捷方式 Target 常开）。代价：仅 Windows、需桌面应用以此方式运行、
+按标题前缀匹配会话、拿不到回复文本（回合在应用内异步执行）。
 
 MIT licensed.
