@@ -85,6 +85,6 @@ if (!titlePrefix || !message) { console.log('usage: node cdp-send.js <titlePrefi
   await key('keyUp');
   await sleep(300);
   clearTimeout(watchdog);
-  console.log('OK sent via desktop UI (CDP)');
+  console.log('OK sent via CDP');
   ws.close(); process.exit(0);
 })().catch((e) => { console.log('ERR: ' + e.message); process.exit(1); });
