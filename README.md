@@ -2,7 +2,7 @@
 
 **English** · [中文说明](#中文说明)
 
-One CLI to read and message the sessions of your local and remote coding agents — **Claude Code**, **Codex**, and **ZCode**.
+One MCP/CLI command managing agent sessions across desktops and CLIs on different local/remote machines — **Claude Code**, **Codex**, and **ZCode**.
 
 ```
 $ agentrelay list
@@ -280,7 +280,7 @@ handling applies.
 
 ## 中文说明
 
-**AgentRelay**：一个 CLI，读取并给本地及远程的 **Claude Code / Codex / ZCode** session 发消息。
+**AgentRelay**：一个 MCP/CLI 命令，跨桌面端与 CLI、跨本地与远程机器，统一管理 **Claude Code / Codex / ZCode** 的 agent 会话。
 
 - `agentrelay list` — 三家 agent 的 session 混合列表（标题、工作区、更新时间）
 - `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨三家匹配 id）
@@ -343,7 +343,8 @@ SSH 工作区的 Claude 会话在本地只有转录镜像；活进程
 ### 远程 agent 操控本地 session
 
 stdio MCP 只能被同机客户端拉起，故另提供 HTTP 传输（127.0.0.1:9321）+ SSH 反向隧道
-（`toolselay-remote-up.ps1`）。远端注册 `http://127.0.0.1:9321/mcp` 即获得操作本地
+（`tools
+elay-remote-up.ps1`）。远端注册 `http://127.0.0.1:9321/mcp` 即获得操作本地
 session 的同一组工具，流量不出 SSH 隧道。
 
 **远程 agent 接入（HTTP 传输）**：stdio MCP 只能被同机客户端拉起。跑在服务器上的
