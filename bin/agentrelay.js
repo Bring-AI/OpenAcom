@@ -34,6 +34,7 @@ function parseArgs(argv) {
     else if (a === '--desktop') flags.desktop = true;
     else if (a === '--fresh') flags.fresh = true;
     else if (a === '--wait') flags.wait = true;
+    else if (a === '--no-desktop') flags.desktop = false;
     else if (a === '--help' || a === '-h') flags.help = true;
     else flags._.push(a);
   }
@@ -118,6 +119,7 @@ function cmdSend(flags) {
   const opts = {};
   if (flags.timeout) opts.timeoutMs = flags.timeout;
   opts.noWait = !flags.wait;
+  if (flags.desktop === false) opts.desktop = false; // --no-desktop: force headless
   try {
     const reply = a.send(id, message, opts);
     if (flags.json) console.log(JSON.stringify({ ok: true, agent: a.name, sessionId: id, reply }, null, 2));

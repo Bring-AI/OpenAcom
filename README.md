@@ -109,10 +109,13 @@ $ agentrelay send "Summarize the API research" --json
 
 `send` with no sessionId defaults to this; `--fresh` is the explicit form.
 
-Sends are **fire-and-forget by default**: the turn runs in the background, the
-command returns immediately, and the reply lands in the session transcript (read
-it with `agentrelay read`). Add `--wait` to block until the target finishes and
-print its reply instead. The same choice exists over MCP (`wait`, default false).
+Sends are **fire-and-forget by default** (reply lands in the transcript; `--wait`
+blocks for it). For zcode, delivery is **CDP-first**: when the desktop app runs
+with `--remote-debugging-port`, messages go through the app's real composer —
+live refresh, native chain, steer of a running turn — and fall back to headless
+automatically when the debug port is absent. `--no-desktop` (CLI) or
+`desktop: false` (MCP) forces headless; `desktop: true` forces UI delivery.
+claude/codex sends are always headless (plus remote-SSH injection for claude).
 
 For a continuing back-and-forth, keep resuming that fresh session's id with the
 normal `send <id>` — it is a headless session no desktop tab holds, so nothing
