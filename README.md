@@ -48,7 +48,7 @@ or run in place without installing: `node bin/agentrelay.js …`
 
 | Command | What it does |
 |---|---|
-| `agentrelay list [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table across all three agents |
+| `agentrelay list [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table across all three agents — **all sessions by default**; `--limit N` truncates |
 | `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
 | `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply |
 | `agentrelay paths` | Show detected storage locations and CLI paths |

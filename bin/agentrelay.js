@@ -45,12 +45,13 @@ function die(msg, code = 1) { console.error('error: ' + msg); process.exit(code)
 
 function cmdList(flags) {
   const rows = [];
+  const lim = flags.limit && flags.limit > 0 ? flags.limit : 0; // 0 = no cap
   for (const a of adaptersToUse(flags.agent)) {
     if (!a.available()) continue;
-    try { rows.push(...a.list(flags.limit || 30)); } catch (e) { console.error(`warn: ${a.name}: ${e.message}`); }
+    try { rows.push(...a.list(lim)); } catch (e) { console.error(`warn: ${a.name}: ${e.message}`); }
   }
   rows.sort((x, y) => y.mtime - x.mtime);
-  const top = rows.slice(0, flags.limit || 30);
+  const top = lim > 0 ? rows.slice(0, lim) : rows;
   if (flags.json) { console.log(JSON.stringify(top, null, 2)); return; }
   printTable(top.map((r) => ({ ...r, updated: fmtTime(r.mtime) })), [
     { key: 'agent', label: 'AGENT' },
