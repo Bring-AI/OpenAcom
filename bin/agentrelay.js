@@ -8,7 +8,7 @@ const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPat
 const HELP = `AgentRelay — one MCP/CLI command managing agent sessions across desktops and CLIs (Claude Code / Codex / ZCode), local and remote
 
 Usage:
-  agentrelay list  [--agent zcode|claude|codex] [--limit N] [--json]
+  agentrelay list  [query...] [--agent zcode|claude|codex] [--limit N] [--json]   fuzzy search (title/id/workspace), top 30 default
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
   agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
   agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait]  resume a session (--wait blocks for the reply)
@@ -45,13 +45,21 @@ function die(msg, code = 1) { console.error('error: ' + msg); process.exit(code)
 
 function cmdList(flags) {
   const rows = [];
-  const lim = flags.limit && flags.limit > 0 ? flags.limit : 0; // 0 = no cap
+  const terms = flags._.join(' ').toLowerCase().split(/\s+/).filter(Boolean);
   for (const a of adaptersToUse(flags.agent)) {
     if (!a.available()) continue;
-    try { rows.push(...a.list(lim)); } catch (e) { console.error(`warn: ${a.name}: ${e.message}`); }
+    try { rows.push(...a.list(0)); } catch (e) { console.error(`warn: ${a.name}: ${e.message}`); }
   }
-  rows.sort((x, y) => y.mtime - x.mtime);
-  const top = lim > 0 ? rows.slice(0, lim) : rows;
+  let filtered = rows;
+  if (terms.length) {
+    filtered = rows.filter((r) => {
+      const hay = `${r.agent} ${r.id} ${r.title} ${r.workspace}`.toLowerCase();
+      return terms.every((t) => hay.includes(t));
+    });
+  }
+  filtered.sort((x, y) => y.mtime - x.mtime);
+  const lim = flags.limit && flags.limit > 0 ? flags.limit : 30;
+  const top = filtered.slice(0, lim);
   if (flags.json) { console.log(JSON.stringify(top, null, 2)); return; }
   printTable(top.map((r) => ({ ...r, updated: fmtTime(r.mtime) })), [
     { key: 'agent', label: 'AGENT' },

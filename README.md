@@ -48,7 +48,7 @@ or run in place without installing: `node bin/agentrelay.js …`
 
 | Command | What it does |
 |---|---|
-| `agentrelay list [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table across all three agents — **all sessions by default**; `--limit N` truncates |
+| `agentrelay list [query...] [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table with **fuzzy search** (agent/id/title/workspace, space-separated AND); top 30 by default, `--limit N` overrides |
 | `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
 | `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply |
 | `agentrelay paths` | Show detected storage locations and CLI paths |
@@ -284,7 +284,7 @@ handling applies.
 
 **AgentRelay**：一个 MCP/CLI 命令，跨桌面端与 CLI、跨本地与远程机器，统一管理 **Claude Code / Codex / ZCode** 的 agent 会话。
 
-- `agentrelay list` — 三家 agent 的 session 混合列表（标题、工作区、更新时间）
+- `agentrelay list [关键词...]` — 三家 session 混合列表 + **模糊搜索**（匹配 agent/ID/标题/工作区，多词 AND），默认 top 30，`--limit N` 覆盖
 - `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨三家匹配 id）
 - `agentrelay send <消息>` / `send <sessionId> <消息>` — 注入**真实用户回合**。默认异步
   （发完即返回，回复落在会话转录里，用 `read` 查看）；加 `--wait` 则阻塞等回复并打印
