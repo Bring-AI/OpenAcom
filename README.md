@@ -54,7 +54,7 @@ or run in place without installing: `node bin/agentrelay.js …`
 | `agentrelay paths` | Show detected storage locations and CLI paths |
 | `agentrelay mcp` | Run as a stdio MCP server exposing the same operations as tools |
 
-Session ids are matched across all three agents automatically; pass `--agent`
+Session ids are matched across all four agents automatically; pass `--agent`
 when an id could be ambiguous or to skip the full scan.
 
 ## Use as an MCP server
@@ -233,6 +233,7 @@ asynchronously in the app).
 | claude | `~/.claude/projects/**/*.jsonl`        | `claude --resume <id> -p` (prompt via stdin)     |
 | codex  | `~/.codex/sessions/**/rollout-*.jsonl` | `codex exec resume <id> -` (prompt via stdin)    |
 | zcode  | `~/.zcode/cli/db/db.sqlite`            | `zcode.cjs --resume <id> --prompt <msg>`         |
+| opencode | `~/.local/share/opencode/opencode.db`  | `opencode run -s <id>` (message via stdin)       |
 
 Everything runs locally against your existing installs; AgentRelay itself adds no
 service, port, or daemon.
