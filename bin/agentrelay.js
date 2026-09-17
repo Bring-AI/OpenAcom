@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 const path = require('path');
+const fs = require('fs');
 const { adaptersToUse, findSession } = require('../lib/core');
 const ADAPTERS = require('../lib/core').ADAPTERS;
 const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPath } = require('../lib/util');
@@ -13,6 +14,7 @@ Usage:
   agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
   agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait] [--no-wait]  resume a session
   agentrelay paths
+  agentrelay oc-serve [dir] [--port N]   start the shared opencode server for a project (live TUI delivery)
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
 Notes:
@@ -173,6 +175,42 @@ function cmdPaths() {
   printTable(rows, [{ key: 'what', label: 'WHAT' }, { key: 'value', label: 'PATH' }]);
 }
 
+// Start the shared opencode server for a project directory on its deterministic
+// port. While it runs, agentrelay delivers opencode sends through it and every
+// TUI attached to it shows the turns live.
+async function cmdOcServe(flags) {
+  const oc = require('../lib/adapters/opencode');
+  const dir = path.resolve(flags._[0] || process.cwd());
+  const port = flags.port || oc.serverPortFor(dir);
+  const base = `http://127.0.0.1:${port}`;
+  // already up?
+  try {
+    const r = await fetch(base + '/session', { signal: AbortSignal.timeout(1200) });
+    if (r.ok) { console.log(`opencode server already running at ${base}`); return; }
+  } catch { /* not running: start it */ }
+  const exe = oc.cliPath();
+  if (!exe || exe === 'opencode') { die('opencode executable not found'); return; }
+  const d = path.join(require('os').homedir(), '.agentrelay', 'logs');
+  fs.mkdirSync(d, { recursive: true });
+  const log = path.join(d, `oc-serve-${port}.log`);
+  const out = fs.openSync(log, 'a');
+  const { spawn } = require('child_process');
+  const child = spawn(exe, ['serve', '--hostname', '127.0.0.1', '--port', String(port)], { cwd: dir, detached: true, stdio: ['ignore', out, out] });
+  child.unref();
+  try { fs.closeSync(out); } catch { /* child owns its dup */ }
+  for (let i = 0; i < 20; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    try {
+      const r = await fetch(base + '/session', { signal: AbortSignal.timeout(800) });
+      if (r.ok) {
+        console.log(`opencode server for ${dir}\n  up at ${base} (pid ${child.pid}, log ${log})\n  attach a TUI:  opencode attach ${base}`);
+        return;
+      }
+    } catch { /* keep waiting */ }
+  }
+  die(`opencode serve did not come up on ${base} within 10s; check ${log}`);
+}
+
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const flags = parseArgs(rest);
@@ -182,6 +220,7 @@ async function main() {
     case 'read': return cmdRead(flags);
     case 'send': return cmdSend(flags);
     case 'paths': return cmdPaths();
+    case 'oc-serve': return cmdOcServe(flags);
     case 'mcp': return require('../lib/mcp').run();
     case 'mcp-http': return require('../lib/mcp-http').runHttp(parseInt(rest[0], 10) || 9321);
     default: console.log(HELP); process.exit(cmd ? 1 : 0);

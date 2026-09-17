@@ -128,6 +128,36 @@ Blocking is the default for opencode targets; `--no-wait` detaches into the
 background (reply lands in the transcript; `read` to review). With `--json`
 the live stream goes to stderr and the final reply stays clean on stdout.
 
+### OpenCode live TUI delivery — the shared server
+
+`opencode run` boots a **throwaway instance** each time: two instances share
+nothing but the SQLite file, so a TUI already open on the session shows the
+delivered turn only after you reopen it — the same staleness zcode's desktop
+had. OpenCode's own fix is a persistent server: it is the single event source
+and pushes every turn over SSE to TUIs attached to it.
+
+AgentRelay rides that: while a shared server is up, sends go through it
+(`POST /session/<id>/message`) and **every attached TUI shows the turn live** —
+the user message, tool progress, the streaming reply.
+
+```
+$ agentrelay oc-serve                      # run once per project directory
+opencode server for F:\Saba
+  up at http://127.0.0.1:44231 (pid 1234)
+  attach a TUI:  opencode attach http://127.0.0.1:44231
+$ opencode attach http://127.0.0.1:44231   # your TUI, live for all traffic
+```
+
+- `serve` is project-scoped, so each directory gets a **deterministic port**
+  derived from the path (44000–44996); the adapter and `oc-serve` derive it
+  identically, no registry. `AGENTRELAY_OPENCODE_URL` overrides the probe.
+- The adapter verifies the target session actually lives on the probed server
+  (port-collision guard) before posting.
+- No server for the session's project? Transparent fallback to the `run`
+  paths above — delivery always works, live refresh is the upgrade.
+- Blocking sends return the finished reply from the server; `--no-wait` posts
+  through a detached helper so the turn survives the CLI exiting.
+
 ### Fresh sessions — recommended for agent-to-agent traffic (zcode)
 
 `agentrelay send --fresh <message>` runs the message in a **brand-new** zcode
@@ -322,6 +352,11 @@ handling applies.
   **opencode 例外**：直接 steer 目标会话原地执行（永不 `--fork`），CLI 默认阻塞并实时
   流式打印（头部、工具进度、回复），`--no-wait` 才走后台；`--json` 时实时流走 stderr，
   stdout 只留干净的最终回复
+- `agentrelay oc-serve [目录] [--port N]` — 为一个项目目录启动**共享 opencode
+  server**（确定性端口 = 目录哈希，44000–44996）。server 运行期间，opencode 的发送
+  全部经它投递（`POST /session/<id>/message`），你用 `opencode attach <url>` 打开的
+  TUI 能**实时看到**每一条注入的消息、工具进度和流式回复。没有 server 时自动回退
+  `opencode run` 路径，投递永远可用
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
 - `agentrelay mcp` — 以 stdio MCP server 运行，把同样能力暴露为 4 个工具
   （`list_sessions` / `read_session` / `send_message` / `get_paths`），可接入
