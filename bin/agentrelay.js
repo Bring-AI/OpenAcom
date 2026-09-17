@@ -5,13 +5,13 @@ const { adaptersToUse, findSession } = require('../lib/core');
 const ADAPTERS = require('../lib/core').ADAPTERS;
 const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPath } = require('../lib/util');
 
-const HELP = `AgentRelay — one MCP/CLI command managing agent sessions across desktops and CLIs (Claude Code / Codex / ZCode), local and remote
+const HELP = `AgentRelay — one MCP/CLI command managing agent sessions across desktops and CLIs (Claude Code / Codex / ZCode / OpenCode), local and remote
 
 Usage:
-  agentrelay list  [query...] [--agent zcode|claude|codex] [--limit N] [--json]   fuzzy search (title/id/workspace), top 30 default
+  agentrelay list  [query...] [--agent zcode|claude|codex|opencode] [--limit N] [--json]   fuzzy search (title/id/workspace), top 30 default
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
   agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
-  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait]  resume a session (--wait blocks for the reply)
+  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait] [--no-wait]  resume a session
   agentrelay paths
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
@@ -19,6 +19,9 @@ Notes:
   - sessionId is matched across all agents unless --agent pins one.
   - send delivers a real new turn to the target session and prints its reply
     (synchronous headless resume; costs model tokens on the target agent).
+  - opencode targets are steered directly: the message lands in that exact
+    session (never forked), and the CLI streams the turn live (header, tool
+    progress, reply). Blocking is the default; --no-wait detaches instead.
   - Env overrides: AGENTRELAY_ZCODE_CLI (path to zcode.cjs).
 `;
 
@@ -34,6 +37,7 @@ function parseArgs(argv) {
     else if (a === '--desktop') flags.desktop = true;
     else if (a === '--fresh') flags.fresh = true;
     else if (a === '--wait') flags.wait = true;
+    else if (a === '--no-wait') flags.noWait = true;
     else if (a === '--no-desktop') flags.desktop = false;
     else if (a === '--help' || a === '-h') flags.help = true;
     else flags._.push(a);
@@ -86,7 +90,7 @@ function cmdRead(flags) {
   }
 }
 
-function cmdSend(flags) {
+async function cmdSend(flags) {
   const [first, ...rest] = flags._;
   const idLike = !!first && findSession(first, flags.agent).length > 0;
   // Fresh default: no positional args at all, --fresh, or a single positional
@@ -127,11 +131,24 @@ function cmdSend(flags) {
   }
   const opts = {};
   if (flags.timeout) opts.timeoutMs = flags.timeout;
-  opts.noWait = !flags.wait;
+  if (a.name === 'opencode') {
+    // Direct steer: block and stream the turn live by default; --no-wait
+    // detaches into the background. The reply is already on screen, so in
+    // human mode there is nothing left to print (only the session tag).
+    opts.noWait = !!flags.noWait;
+    if (!opts.noWait) {
+      opts.onData = flags.json
+        ? (s, chunk) => process.stderr.write(chunk)
+        : (s, chunk) => (s === 'stdout' ? process.stdout : process.stderr).write(chunk);
+    }
+  } else {
+    opts.noWait = !flags.wait;
+  }
   if (flags.desktop === false) opts.desktop = false; // --no-desktop: force headless
   try {
-    const reply = a.send(id, message, opts);
+    const reply = await a.send(id, message, opts);
     if (flags.json) console.log(JSON.stringify({ ok: true, agent: a.name, sessionId: id, reply }, null, 2));
+    else if (a.name === 'opencode' && !opts.noWait) console.error(`\n[session: ${id}]`);
     else console.log(reply || '(empty reply)');
   } catch (e) {
     if (flags.json) { console.log(JSON.stringify({ ok: false, agent: a.name, sessionId: id, error: e.message }, null, 2)); process.exit(1); }
@@ -140,6 +157,8 @@ function cmdSend(flags) {
 }
 
 function cmdPaths() {
+  let opencodeCli = '(not found)';
+  try { opencodeCli = require('../lib/adapters/opencode').cliPath(); } catch { /* keep placeholder */ }
   const rows = [
     { what: 'zcode sessions db', value: path.join(require('os').homedir(), '.zcode', 'cli', 'db', 'db.sqlite') },
     { what: 'zcode cli (zcode.cjs)', value: resolveZcodeCli() || '(not found — set AGENTRELAY_ZCODE_CLI)' },
@@ -148,11 +167,13 @@ function cmdPaths() {
     { what: 'claude cli', value: whichCli('claude') || '(not found)' },
     { what: 'codex sessions', value: path.join(require('os').homedir(), '.codex', 'sessions') },
     { what: 'codex cli', value: whichCli('codex') || '(not found)' },
+    { what: 'opencode sessions db', value: path.join(require('os').homedir(), '.local', 'share', 'opencode', 'opencode.db') },
+    { what: 'opencode cli', value: opencodeCli },
   ];
   printTable(rows, [{ key: 'what', label: 'WHAT' }, { key: 'value', label: 'PATH' }]);
 }
 
-function main() {
+async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const flags = parseArgs(rest);
   if (flags.help) { console.log(HELP); return; }
@@ -167,4 +188,4 @@ function main() {
   }
 }
 
-main();
+main().catch((e) => { console.error('error: ' + (e && e.message || e)); process.exit(1); });

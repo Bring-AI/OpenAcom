@@ -4,7 +4,7 @@
 
 **English** · [中文说明](#中文说明)
 
-One MCP/CLI command managing agent sessions across desktops and CLIs on different local/remote machines — **Claude Code**, **Codex**, and **ZCode**.
+One MCP/CLI command managing agent sessions across desktops and CLIs on different local/remote machines — **Claude Code**, **Codex**, **ZCode**, and **OpenCode**.
 
 ```
 $ agentrelay list
@@ -50,7 +50,7 @@ or run in place without installing: `node bin/agentrelay.js …`
 |---|---|
 | `agentrelay list [query...] [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table with **fuzzy search** (agent/id/title/workspace, space-separated AND); top 30 by default, `--limit N` overrides |
 | `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
-| `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply |
+| `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply (opencode targets steer the exact session live — never forked — and stream the turn in the CLI; blocking by default, `--no-wait` detaches) |
 | `agentrelay paths` | Show detected storage locations and CLI paths |
 | `agentrelay mcp` | Run as a stdio MCP server exposing the same operations as tools |
 
@@ -95,8 +95,38 @@ ZCode (`~/.zcode/cli/config.json`):
 } } } }
 ```
 
+OpenCode (`~/.config/opencode/opencode.jsonc`):
+
+```json
+{ "mcp": { "agentrelay": {
+    "type": "local",
+    "command": ["node", "C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"],
+    "enabled": true
+} } }
+```
+
 `send_message` is fire-and-forget by default (see above); `wait:true` blocks. All caveats apply
 below — it appends to the target session's real history and spends its tokens.
+
+### OpenCode sends — direct steer, live in the CLI
+
+`send` to an opencode session runs `opencode run -s <id>` with the message
+over stdin: a genuine user turn in **that exact session**, never `--fork`ed
+(a fork would divert the turn into a copy the live session never sees). The
+CLI streams the turn live — session header, tool progress, then the reply —
+so a steer is visible the moment it happens:
+
+```
+$ agentrelay send ses_f4fa6e7b... "Continue with the next step"
+> build · muse-spark-1.3-contributor-free
+→ Read src/index.ts
+Done, next step implemented.
+[session: ses_f4fa6e7b...]
+```
+
+Blocking is the default for opencode targets; `--no-wait` detaches into the
+background (reply lands in the transcript; `read` to review). With `--json`
+the live stream goes to stderr and the final reply stays clean on stdout.
 
 ### Fresh sessions — recommended for agent-to-agent traffic (zcode)
 
@@ -283,12 +313,15 @@ handling applies.
 
 ## 中文说明
 
-**AgentRelay**：一个 MCP/CLI 命令，跨桌面端与 CLI、跨本地与远程机器，统一管理 **Claude Code / Codex / ZCode** 的 agent 会话。
+**AgentRelay**：一个 MCP/CLI 命令，跨桌面端与 CLI、跨本地与远程机器，统一管理 **Claude Code / Codex / ZCode / OpenCode** 的 agent 会话。
 
-- `agentrelay list [关键词...]` — 三家 session 混合列表 + **模糊搜索**（匹配 agent/ID/标题/工作区，多词 AND），默认 top 30，`--limit N` 覆盖
-- `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨三家匹配 id）
+- `agentrelay list [关键词...]` — 四家 session 混合列表 + **模糊搜索**（匹配 agent/ID/标题/工作区，多词 AND），默认 top 30，`--limit N` 覆盖
+- `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨四家匹配 id）
 - `agentrelay send <消息>` / `send <sessionId> <消息>` — 注入**真实用户回合**。默认异步
-  （发完即返回，回复落在会话转录里，用 `read` 查看）；加 `--wait` 则阻塞等回复并打印
+  （发完即返回，回复落在会话转录里，用 `read` 查看）；加 `--wait` 则阻塞等回复并打印。
+  **opencode 例外**：直接 steer 目标会话原地执行（永不 `--fork`），CLI 默认阻塞并实时
+  流式打印（头部、工具进度、回复），`--no-wait` 才走后台；`--json` 时实时流走 stderr，
+  stdout 只留干净的最终回复
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
 - `agentrelay mcp` — 以 stdio MCP server 运行，把同样能力暴露为 4 个工具
   （`list_sessions` / `read_session` / `send_message` / `get_paths`），可接入
@@ -306,7 +339,7 @@ zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI`
 桌面端的 `~/.zcode/v2/config.json` 对无头 CLI 不生效），示例见上方。
 
 **注意**：`send` 会消耗目标 agent 的模型额度并永久写入其 session 历史；给正在忙碌的
-session 发送可能抢占当前轮次；session 存储格式是三家 agent 的本地私有格式，随版本可能变化。
+session 发送可能抢占当前轮次；session 存储格式是四家 agent 的本地私有格式，随版本可能变化。
 
 **fresh 会话模式（默认的 agent 间通信）**：`agentrelay send <消息>`（不带 sessionId
 即走此模式；`--fresh` 为显式形式）在一个
