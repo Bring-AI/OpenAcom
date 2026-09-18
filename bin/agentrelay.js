@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 'use strict';
 const path = require('path');
-const fs = require('fs');
 const { adaptersToUse, findSession } = require('../lib/core');
 const ADAPTERS = require('../lib/core').ADAPTERS;
 const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPath } = require('../lib/util');
@@ -14,7 +13,7 @@ Usage:
   agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
   agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait] [--no-wait]  resume a session
   agentrelay paths
-  agentrelay oc-serve [dir] [--port N]   start the shared opencode server for a project (live TUI delivery)
+  agentrelay oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
 
 Notes:
@@ -24,6 +23,10 @@ Notes:
   - opencode targets are steered directly: the message lands in that exact
     session (never forked), and the CLI streams the turn live (header, tool
     progress, reply). Blocking is the default; --no-wait detaches instead.
+  - opencode sends auto-start the project's shared server when needed, so an
+    attached TUI shows the turn live with zero setup (AGENTRELAY_OPENCODE_URL
+    overrides the probe; AGENTRELAY_OPENCODE_NOSERVE=1 disables auto-start and
+    falls back to run). oc-serve only pre-warms.
   - Env overrides: AGENTRELAY_ZCODE_CLI (path to zcode.cjs).
 `;
 
@@ -35,6 +38,7 @@ function parseArgs(argv) {
     else if (a === '--limit') flags.limit = parseInt(argv[++i], 10);
     else if (a === '--last' || a === '-n') flags.last = parseInt(argv[++i], 10);
     else if (a === '--timeout') flags.timeout = parseInt(argv[++i], 10);
+    else if (a === '--port') flags.port = parseInt(argv[++i], 10);
     else if (a === '--json') flags.json = true;
     else if (a === '--desktop') flags.desktop = true;
     else if (a === '--fresh') flags.fresh = true;
@@ -175,40 +179,22 @@ function cmdPaths() {
   printTable(rows, [{ key: 'what', label: 'WHAT' }, { key: 'value', label: 'PATH' }]);
 }
 
-// Start the shared opencode server for a project directory on its deterministic
-// port. While it runs, agentrelay delivers opencode sends through it and every
-// TUI attached to it shows the turns live.
+// Pre-warm the shared opencode server for a project directory (idempotent).
+// Normally unnecessary: `send` to an opencode session ensures the server by
+// itself. This only prints the paste-ready attach line up front.
 async function cmdOcServe(flags) {
   const oc = require('../lib/adapters/opencode');
   const dir = path.resolve(flags._[0] || process.cwd());
   const port = flags.port || oc.serverPortFor(dir);
   const base = `http://127.0.0.1:${port}`;
-  // already up?
   try {
-    const r = await fetch(base + '/session', { signal: AbortSignal.timeout(1200) });
-    if (r.ok) { console.log(`opencode server already running at ${base}`); return; }
-  } catch { /* not running: start it */ }
-  const exe = oc.cliPath();
-  if (!exe || exe === 'opencode') { die('opencode executable not found'); return; }
-  const d = path.join(require('os').homedir(), '.agentrelay', 'logs');
-  fs.mkdirSync(d, { recursive: true });
-  const log = path.join(d, `oc-serve-${port}.log`);
-  const out = fs.openSync(log, 'a');
-  const { spawn } = require('child_process');
-  const child = spawn(exe, ['serve', '--hostname', '127.0.0.1', '--port', String(port)], { cwd: dir, detached: true, stdio: ['ignore', out, out] });
-  child.unref();
-  try { fs.closeSync(out); } catch { /* child owns its dup */ }
-  for (let i = 0; i < 20; i++) {
-    await new Promise((r) => setTimeout(r, 500));
-    try {
-      const r = await fetch(base + '/session', { signal: AbortSignal.timeout(800) });
-      if (r.ok) {
-        console.log(`opencode server for ${dir}\n  up at ${base} (pid ${child.pid}, log ${log})\n  attach a TUI:  opencode attach ${base}`);
-        return;
-      }
-    } catch { /* keep waiting */ }
-  }
-  die(`opencode serve did not come up on ${base} within 10s; check ${log}`);
+    if (await oc.probeServer(base, null, 1200)) {
+      console.log(`opencode server already running at ${base}\n  attach a TUI:  opencode attach ${base}`);
+      return;
+    }
+    const s = await oc.startServer(dir, { port });
+    console.log(`opencode server for ${dir}\n  up at ${s.base} (pid ${s.pid}, log ${s.log})\n  attach a TUI:  opencode attach ${s.base}`);
+  } catch (e) { die(e.message); }
 }
 
 async function main() {
