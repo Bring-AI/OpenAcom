@@ -12,6 +12,9 @@ Usage:
   agentrelay read  <sessionId> [--agent A] [--last N] [--json]
   agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
   agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait] [--no-wait]  resume a session
+  agentrelay send  <sessionId> <message...> --require-read [--ack-timeout ms]  send with read receipt: auto-redeliver until acked, 3 attempts max
+  agentrelay inbox [--status pending|sent|read|failed] [--limit N] [--json]  tracked sends and their read status
+  agentrelay ack    <messageId>    manually mark a tracked message as read
   agentrelay paths
   agentrelay oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)
   agentrelay oc-attach [dir] [--port N]   open a live TUI on the project's shared server (starts it if needed)
@@ -35,6 +38,10 @@ Notes:
 
 function parseArgs(argv) {
   const flags = { _: [] };
+  const requireNext = (arr, i, name) => {
+    if (i + 1 >= arr.length) die(`option ${name} requires a value`);
+    return arr[i + 1];
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--agent') flags.agent = argv[++i];
@@ -46,6 +53,9 @@ function parseArgs(argv) {
     else if (a === '--desktop') flags.desktop = true;
     else if (a === '--fresh') flags.fresh = true;
     else if (a === '--wait') flags.wait = true;
+    else if (a === '--require-read') flags.requireRead = true;
+    else if (a === '--ack-timeout') flags.ackTimeout = parseInt(requireNext(argv, i, a), 10);
+    else if (a === '--status') flags.status = requireNext(argv, i, a);
     else if (a === '--no-wait') flags.noWait = true;
     else if (a === '--no-desktop') flags.desktop = false;
     else if (a === '--help' || a === '-h') flags.help = true;
@@ -154,6 +164,23 @@ async function cmdSend(flags) {
     opts.noWait = !flags.wait;
   }
   if (flags.desktop === false) opts.desktop = false; // --no-desktop: force headless
+  if (flags.requireRead) {
+    try {
+      const outcome = await require('../lib/inbox').trackedSend(a, id, `cli:${a.name}`, message, {
+        ackTimeoutMs: flags.ackTimeout || 90e3,
+        maxAttempts: 3,
+        sendOpts: opts,
+      });
+      const ok = outcome.status === 'read';
+      if (flags.json) { console.log(JSON.stringify({ ok, agent: a.name, sessionId: id, ...outcome }, null, 2)); if (!ok) process.exit(1); }
+      else {
+        if (!ok) process.exitCode = 1;
+        console.log(outcome.status === 'read' ? `READ (attempt ${outcome.attemptsUsed}/3)` : `FAILED after ${outcome.attemptsUsed} attempts — target never acknowledged`);
+        for (const p of outcome.problems || []) console.error(`  - ${p}`);
+      }
+    } catch (e) { die(e.message); }
+    return;
+  }
   try {
     const reply = await a.send(id, message, opts);
     if (flags.json) console.log(JSON.stringify({ ok: true, agent: a.name, sessionId: id, reply }, null, 2));
@@ -221,6 +248,34 @@ async function cmdOcAttach(flags) {
   process.exit(r.status ?? 0);
 }
 
+function cmdInbox(flags) {
+  const inbox = require('../lib/inbox');
+  const rows = inbox.list({ status: flags.status, limit: flags.limit && flags.limit > 0 ? flags.limit : 30 });
+  if (flags.json) { console.log(JSON.stringify(rows, null, 2)); return; }
+  const view = rows.map((r) => ({
+    id: r.id.slice(0, 8), status: r.status.padEnd(7), att: `${r.attempts}/${r.max_attempts}`,
+    to: r.to_addr, updated: new Date(r.updated_at).toISOString().replace('T', ' ').slice(0, 19),
+    error: (r.last_error || '').slice(0, 60),
+  }));
+  if (!view.length) { console.log('(inbox empty)'); return; }
+  printTable(view, [
+    { key: 'id', label: 'ID' }, { key: 'status', label: 'STATUS' }, { key: 'att', label: 'ATT' },
+    { key: 'to', label: 'TO' }, { key: 'updated', label: 'UPDATED' }, { key: 'error', label: 'ERROR' },
+  ]);
+}
+
+function cmdAck(flags) {
+  const id = flags._[0];
+  if (!id) die('ack needs: <messageId> (full id or the 8-char prefix shown by inbox)');
+  const inbox = require('../lib/inbox');
+  let target = null;
+  const rows = inbox.list({ limit: 1000 });
+  target = rows.find((r) => r.id === id) || rows.find((r) => r.id.startsWith(id));
+  if (!target) die(`unknown message id: ${id}`);
+  const row = inbox.markRead(target.id);
+  console.log(`acknowledged: ${row.id} (status=${row.status})`);
+}
+
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   if (cmd === 'relay') return require('../lib/distributed-cli').run(rest);
@@ -235,6 +290,8 @@ async function main() {
     case 'read': return cmdRead(flags);
     case 'send': return cmdSend(flags);
     case 'paths': return cmdPaths();
+    case 'inbox': return cmdInbox(flags);
+    case 'ack': return cmdAck(flags);
     case 'oc-serve': return cmdOcServe(flags);
     case 'oc-attach': return cmdOcAttach(flags);
     case 'mcp': return require('../lib/mcp').run();

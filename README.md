@@ -221,6 +221,8 @@ OpenCode 经 MCP → Windows OpenCode 的可见草稿回信。macOS 和 Claude T
 | `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
 | `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply (opencode targets steer the exact session live — never forked — and stream the turn in the CLI; blocking by default, `--no-wait` detaches) |
 | `agentrelay paths` | Show detected storage locations and CLI paths |
+| `agentrelay inbox [--status S] [--limit N] [--json]` | Tracked sends and their read status (`sent` awaiting ack / `read` / `failed`) |
+| `agentrelay ack <messageId>` | Manually mark a tracked message as read |
 | `agentrelay oc-serve [dir] [--port N]` | Pre-warm a project's shared OpenCode server (normally unnecessary because `send` starts it automatically) |
 | `agentrelay oc-attach [dir] [--port N]` | Open a live OpenCode TUI on the project's shared server, starting the server when needed |
 | `agentrelay mcp` | Run as a stdio MCP server exposing the same operations as tools |
@@ -341,6 +343,36 @@ $ agentrelay oc-attach F:/Saba             # opens the live TUI; no URL lookup o
   `send_message` automatically — one interface, CLI and MCP alike.
 - `agentrelay oc-attach [dir] [--port N]` is the one-step viewer command: it
   starts the same server when needed and attaches a TUI in the current terminal.
+
+### Read receipts — tracked sends that redeliver until acknowledged
+
+A plain `send` proves *input delivered*, nothing more. When you need the target
+to actually **receive and process** a message, add `--require-read` (CLI) or
+`requireRead: true` (MCP `send_message`):
+
+- the message carries a receipt footer with a unique id and asks the target to
+  ack — by calling the `ack_message` MCP tool, or (works even before the
+  target's MCP process has restarted with the new tools) by simply replying
+  with a line containing `ACK-<id>`;
+- AgentRelay watches for the ack (tool call or assistant reply token). No ack
+  within `--ack-timeout` (default 90s) → **automatic redelivery**, 3 attempts
+  total; still nothing → the message is declared `failed` and the sender gets
+  an honest error instead of a fake OK.
+
+```
+$ agentrelay send sess_... "部署状态如何？" --agent zcode --require-read
+READ (attempt 1/3)            # target acknowledged
+$ agentrelay send sess_... "紧急..." --agent zcode --require-read --ack-timeout 30000
+FAILED after 3 attempts — target never acknowledged
+```
+
+Every tracked send lives in the local inbox (`~/.agentrelay/inbox.sqlite`):
+`agentrelay inbox` (or the MCP `inbox` tool) lists statuses, `agentrelay ack
+<id>` / MCP `ack_message` marks read. A target that never acks — offline
+agent, dead session, a human who stopped caring — is *reported*, not retried
+forever: 3 strikes and the sender is told. Note the ack waits in the calling
+process, so a `requireRead` send blocks (worst case ~3 × ack-timeout); keep
+your MCP timeout above that.
 
 ### Fresh sessions — recommended for agent-to-agent traffic (zcode)
 
@@ -563,6 +595,15 @@ handling applies.
 - `agentrelay oc-attach [目录] [--port N]` — 一步打开该项目共享 server 的实时
   TUI；server 未启动时会自动启动，不需要查端口或复制 URL
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
+- `agentrelay inbox [--status S] [--limit N] [--json]` — 查看带已读回执的发送记录
+  （`sent` 待回执 / `read` 已读 / `failed` 三次未回执判死）
+- `agentrelay ack <messageId>` — 手动把一条追踪消息标记为已读
+- **已读回执模式**：`send ... --require-read`（或 MCP `send_message` 的
+  `requireRead: true`）——消息尾附带回执单（唯一 id），对方处理后调 `ack_message`
+  工具、或回复中包含 `ACK-<id>` 即算已读；超时未回执（默认 90s，`--ack-timeout`
+  可调）自动重发，**最多 3 次**，仍无回执则判 `failed` 并如实上报——不再给发送方
+  假 OK。记录落在本地收件箱 `~/.agentrelay/inbox.sqlite`。注意：该模式会阻塞等待
+  回执（最坏 ~3×超时），调用方 MCP 超时要留够
 - `agentrelay mcp` — 以 stdio MCP server 运行：基础 4 工具（`list_sessions` /
   `read_session` / `send_message` / `get_paths`）接入 Claude Code、Claude Desktop、
   Codex、ZCode 等 MCP 客户端，配置示例见上方英文段；当进程环境配置了
