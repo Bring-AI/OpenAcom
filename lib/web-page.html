@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>OpenAcom 收件箱</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d; --fg: #e6edf3; --dim: #8b949e;
+    --read: #3fb950; --sent: #d29922; --failed: #f85149; --pending: #58a6ff; --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 "Segoe UI", "Microsoft YaHei", sans-serif; }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  .chips { display: flex; gap: 6px; }
+  .chip { border: 1px solid var(--border); background: var(--panel); color: var(--dim); border-radius: 999px; padding: 3px 12px; cursor: pointer; font-size: 13px; }
+  .chip.active { color: var(--fg); border-color: var(--accent); }
+  .chip b { color: inherit; }
+  #refreshed { margin-left: auto; color: var(--dim); font-size: 12px; }
+  main { display: flex; height: calc(100vh - 55px); }
+  #list { flex: 1; overflow-y: auto; }
+  .row { display: flex; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--border); cursor: pointer; align-items: baseline; }
+  .row:hover { background: #1c2129; }
+  .row.sel { background: #1f2630; }
+  .badge { flex: none; width: 52px; text-align: center; border-radius: 4px; font-size: 12px; padding: 1px 0; }
+  .badge.read { background: rgba(63,185,80,.15); color: var(--read); }
+  .badge.sent { background: rgba(210,153,34,.15); color: var(--sent); }
+  .badge.failed { background: rgba(248,81,73,.15); color: var(--failed); }
+  .badge.pending { background: rgba(88,166,255,.15); color: var(--pending); }
+  .row .to { font-weight: 600; flex: none; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .snippet { color: var(--dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .meta { flex: none; color: var(--dim); font-size: 12px; }
+  #detail { flex: none; width: 420px; border-left: 1px solid var(--border); padding: 16px 18px; overflow-y: auto; background: var(--panel); display: none; }
+  #detail h2 { font-size: 14px; margin: 0 0 10px; }
+  #detail dl { display: grid; grid-template-columns: 84px 1fr; gap: 4px 10px; font-size: 13px; }
+  #detail dt { color: var(--dim); }
+  #detail dd { margin: 0; word-break: break-all; }
+  #detail pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; white-space: pre-wrap; word-break: break-word; font: 12px/1.6 Consolas, monospace; max-height: 45vh; overflow-y: auto; }
+  #detail .err { color: var(--failed); font-size: 13px; white-space: pre-wrap; }
+  button.ack { margin-top: 12px; background: #238636; color: #fff; border: 0; border-radius: 6px; padding: 6px 16px; cursor: pointer; font-size: 13px; }
+  button.ack:disabled { background: var(--border); color: var(--dim); cursor: default; }
+  .empty { color: var(--dim); padding: 40px; text-align: center; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--read); margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot"></span>OpenAcom 收件箱</h1>
+  <div class="chips" id="chips"></div>
+  <span id="refreshed"></span>
+  <a href="/docs" style="color:var(--accent);font-size:13px;text-decoration:none;margin-left:12px">📖 文档</a>
+</header>
+<main>
+  <div id="list"></div>
+  <div id="detail"></div>
+</main>
+<script>
+  const STATUS_CN = { pending: '待发送', sent: '待回执', read: '已读', failed: '失败' };
+  const ORDER = ['all', 'sent', 'read', 'failed', 'pending'];
+  let filter = 'all', selected = null, stats = {};
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function ago(ms) {
+    const d = Date.now() - ms, m = 60e3, h = 60 * m;
+    if (d < m) return '刚刚';
+    if (d < h) return Math.floor(d / m) + ' 分钟前';
+    if (d < 24 * h) return Math.floor(d / h) + ' 小时前';
+    return Math.floor(d / (24 * h)) + ' 天前';
+  }
+  function snippet(t) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > 90 ? t.slice(0, 90) + '…' : t; }
+
+  async function api(p, opts) { const r = await fetch(p, opts); return r.json(); }
+
+  function renderChips() {
+    const el = document.getElementById('chips');
+    el.innerHTML = ORDER.map((k) => {
+      const label = k === 'all' ? `全部 <b>${stats.pending + stats.sent + stats.read + stats.failed || 0}</b>` : `${STATUS_CN[k]} <b>${stats[k] || 0}</b>`;
+      return `<span class="chip ${filter === k ? 'active' : ''}" data-k="${k}">${label}</span>`;
+    }).join('');
+    el.querySelectorAll('.chip').forEach((c) => c.onclick = () => { filter = c.dataset.k; renderChips(); load(); });
+  }
+
+  function renderList(rows) {
+    const el = document.getElementById('list');
+    if (!rows.length) { el.innerHTML = '<div class="empty">暂无消息 —— 用 send --require-read 发送的消息会出现在这里</div>'; return; }
+    el.innerHTML = rows.map((r) => `
+      <div class="row ${selected === r.id ? 'sel' : ''}" data-id="${r.id}">
+        <span class="badge ${r.status}">${STATUS_CN[r.status] || r.status}</span>
+        <span class="to">${esc(r.to_addr)}</span>
+        <span class="snippet">${esc(snippet(r.text))}</span>
+        <span class="meta">${r.attempts}/${r.max_attempts} · ${ago(r.updated_at)}</span>
+      </div>`).join('');
+    el.querySelectorAll('.row').forEach((n) => n.onclick = () => { selected = n.dataset.id; openDetail(selected); renderList(rows); });
+  }
+
+  async function openDetail(id) {
+    const r = await api('/api/messages/' + id);
+    const d = document.getElementById('detail');
+    d.style.display = 'block';
+    d.innerHTML = `
+      <h2>消息详情</h2>
+      <dl>
+        <dt>回执 ID</dt><dd>${esc(r.id)}</dd>
+        <dt>发件方</dt><dd>${esc(r.from_addr)}</dd>
+        <dt>收件方</dt><dd>${esc(r.to_addr)}</dd>
+        <dt>状态</dt><dd><span class="badge ${r.status}">${STATUS_CN[r.status] || r.status}</span></dd>
+        <dt>重发次数</dt><dd>${r.attempts} / ${r.max_attempts}</dd>
+        <dt>创建时间</dt><dd>${new Date(r.created_at).toLocaleString()}</dd>
+        <dt>已读时间</dt><dd>${r.read_at ? new Date(r.read_at).toLocaleString() : '—'}</dd>
+      </dl>
+      ${r.last_error ? `<p class="err">${esc(r.last_error)}</p>` : ''}
+      <pre>${esc(r.text)}</pre>
+      <button class="ack" id="ackbtn" ${r.status === 'read' ? 'disabled' : ''}>标记为已读</button>`;
+    const btn = d.querySelector('#ackbtn');
+    if (btn) btn.onclick = async () => {
+      await api('/api/ack', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id }) });
+      openDetail(r.id); load();
+    };
+  }
+
+  async function load() {
+    const rows = await api('/api/messages' + (filter === 'all' ? '' : '?status=' + filter) + '&limit=200');
+    renderList(rows);
+    stats = await api('/api/stats');
+    renderChips();
+    document.getElementById('refreshed').textContent = '刷新于 ' + new Date().toLocaleTimeString();
+  }
+
+  load();
+  setInterval(load, 5000);
+</script>
+</body>
+</html>

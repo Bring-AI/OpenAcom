@@ -11,7 +11,7 @@ const { deliver } = require('../lib/delivery');
 // Real PTYs catch both input packet-boundary bugs and nested Windows ConPTY
 // switching the upstream terminal into Win32 encoded keyboard mode.
 test('managed PTY accepts coalesced ownership controls and protects a visible draft', { timeout: 20000 }, async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentrelay-pty-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openacom-pty-'));
   const program = path.join(dir, 'receiver.cjs');
   fs.writeFileSync(program, `
 process.stdin.setRawMode(true); process.stdin.resume();
@@ -34,7 +34,7 @@ process.stdin.on('data', chunk => {
 `);
   let output = '';
   let exited = false;
-  const child = pty.spawn(process.execPath, [path.resolve(__dirname, '../bin/agentrelay.js'), 'terminal', '--name', 'test', '--data', dir, '--', process.execPath, program], {
+  const child = pty.spawn(process.execPath, [path.resolve(__dirname, '../bin/openacom.js'), 'terminal', '--name', 'test', '--data', dir, '--', process.execPath, program], {
     name: 'xterm-256color', cols: 120, rows: 30, cwd: dir, env: { ...process.env },
   });
   const subscription = child.onData(chunk => { output += chunk; });

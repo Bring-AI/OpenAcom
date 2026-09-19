@@ -1,20 +1,22 @@
-# AgentRelay
+# OpenAcom
 
-![AgentRelay](banner.png)
+![OpenAcom](banner.png)
 
 **English** · [中文说明](#中文说明)
+
+**Opensource, Distributed, and safe agent communication.**
 
 One MCP/CLI command managing agent sessions across desktops and CLIs on different local/remote machines — **Claude Code**, **Codex**, **ZCode**, and **OpenCode**.
 
 ```
-$ agentrelay list
+$ openacom list
 AGENT   SESSION                                    TITLE                                 WORKSPACE       UPDATED
 ------  -----------------------------------------  ------------------------------------  --------------  --------
 zcode   sess_5027cd0f-689f-4576-8509-8a76ac51fa36  Cross-session messaging PoC           C:\…\default    just now
 claude  275c102a-8cf7-4720-935d-96b6ddfd0af3       Frontend design review                F:\Bob          1h ago
 codex   01a07b4b-bc27-7fd1-89c0-dae8c883bf06       Add topic search to the course page   F:\Saba         5h ago
 
-$ agentrelay send 01a07b4b-bc27-7fd1-89c0-dae8c883bf06 "Research is done, please continue with the next step"
+$ openacom send 01a07b4b-bc27-7fd1-89c0-dae8c883bf06 "Research is done, please continue with the next step"
 (the target session receives a real user turn; its reply is printed here)
 ```
 
@@ -33,17 +35,17 @@ Requires Node.js ≥ 22.13 for normal invocation (uses built-in `node:sqlite`).
 Node 22.5–22.12 requires `--experimental-sqlite`; newer Node LTS is recommended.
 
 ```bash
-npm install -g github:wwy155/agent-relay
+npm install -g github:wwy155/openacom
 ```
 
 or from a clone:
 
 ```bash
-git clone https://github.com/wwy155/agent-relay
-npm install -g ./agent-relay
+git clone https://github.com/wwy155/openacom
+npm install -g ./openacom
 ```
 
-or run in place without installing: `node bin/agentrelay.js …`
+or run in place without installing: `node bin/openacom.js …`
 
 ## 分布式通信：真实 TUI 输入，而不是后台续跑
 
@@ -59,9 +61,9 @@ or run in place without installing: `node bin/agentrelay.js …`
 ```powershell
 npm install
 # 生成一次；通过可信渠道把同一个 token 配置到各参与机器，不要提交到 Git。
-node bin/agentrelay.js relay token
+node bin/openacom.js relay token
 $env:AGENTRELAY_TOKEN = '<上一步生成的 token>'
-node bin/agentrelay.js relay hub --port 9330
+node bin/openacom.js relay hub --port 9330
 ```
 
 Hub 默认仅监听 `127.0.0.1`。客户端配置 `AGENTRELAY_URL`，默认
@@ -93,16 +95,16 @@ ssh -NT -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
 ### 2. 托管需要接收消息的真实终端
 
 ```sh
-node bin/agentrelay.js terminal --name coder -- codex
-node bin/agentrelay.js terminal --name reviewer -- claude
-node bin/agentrelay.js terminal --name builder -- opencode
+node bin/openacom.js terminal --name coder -- codex
+node bin/openacom.js terminal --name reviewer -- claude
+node bin/openacom.js terminal --name builder -- opencode
 ```
 
 `--` 后是本机可执行程序及参数，不是远端下发的 shell 命令。Windows 的 npm
 启动器如果只有 `.cmd`，显式启动本机 shell，例如：
 
 ```powershell
-node bin/agentrelay.js terminal --name reviewer -- cmd.exe /d /s /c claude
+node bin/openacom.js terminal --name reviewer -- cmd.exe /d /s /c claude
 ```
 
 包装器使用 `node-pty`（Windows ConPTY / Unix PTY），原样转发终端显示、键盘、
@@ -125,7 +127,7 @@ steer 或排队输入。授权前确认 TUI 状态，不要在密码框、权限
 ### 3. 配置本机目标并启动 Node
 
 包装器在 stderr 打印 descriptor 路径，默认
-`~/.agentrelay/terminals/coder.json`。把该 JSON 对象放到本机 `targets.json`
+`~/.openacom/terminals/coder.json`。把该 JSON 对象放到本机 `targets.json`
 的目标名下；例如：
 
 ```json
@@ -149,7 +151,7 @@ Node 加载配置。每台机器使用不同的 Node ID 和自己的数据目录
 
 ```powershell
 $env:AGENTRELAY_TOKEN = '<同一个 token>'
-node bin/agentrelay.js relay node --id laptop-b --targets .\targets.json
+node bin/openacom.js relay node --id laptop-b --targets .\targets.json
 ```
 
 ZCode 桌面目标仅支持 `submit`，要求 Windows 和已开启的本机 CDP 调试端口。
@@ -162,10 +164,10 @@ ZCode 桌面目标仅支持 `submit`，要求 Windows 和已开启的本机 CDP 
 ### 4. 发消息、查状态、让 Agent 回信
 
 ```sh
-node bin/agentrelay.js relay nodes
-node bin/agentrelay.js relay send laptop-b coder "请检查接口，并把结论发回 laptop-a 的 planner"
-node bin/agentrelay.js relay send laptop-b coder "这是一条待确认草稿" --mode draft
-node bin/agentrelay.js relay status <返回的消息ID>
+node bin/openacom.js relay nodes
+node bin/openacom.js relay send laptop-b coder "请检查接口，并把结论发回 laptop-a 的 planner"
+node bin/openacom.js relay send laptop-b coder "这是一条待确认草稿" --mode draft
+node bin/openacom.js relay status <返回的消息ID>
 ```
 
 `--id <UUID>` 提供幂等提交：同 ID、同内容返回原消息，不重复排队；
@@ -175,9 +177,9 @@ node bin/agentrelay.js relay status <返回的消息ID>
 即可使用新增的 `relay_nodes`、`relay_send`、`relay_status`。例如 Claude Desktop：
 
 ```json
-{ "mcpServers": { "agentrelay": {
+{ "mcpServers": { "openacom": {
     "command": "node",
-    "args": ["C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"],
+    "args": ["C:\\path\\to\\openacom\\bin\\openacom.js", "mcp"],
     "env": { "AGENTRELAY_URL": "http://127.0.0.1:9330", "AGENTRELAY_TOKEN": "<同一个 token>" }
 } } }
 ```
@@ -217,22 +219,22 @@ OpenCode 经 MCP → Windows OpenCode 的可见草稿回信。macOS 和 Claude T
 
 | Command | What it does |
 |---|---|
-| `agentrelay list [query...] [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table with **fuzzy search** (agent/id/title/workspace, space-separated AND); top 30 by default, `--limit N` overrides |
-| `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
-| `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply (opencode targets steer the exact session live — never forked — and stream the turn in the CLI; blocking by default, `--no-wait` detaches) |
-| `agentrelay paths` | Show detected storage locations and CLI paths |
-| `agentrelay inbox [--status S] [--limit N] [--json]` | Tracked sends and their read status (`sent` awaiting ack / `read` / `failed`) |
-| `agentrelay ack <messageId>` | Manually mark a tracked message as read |
-| `agentrelay oc-serve [dir] [--port N]` | Pre-warm a project's shared OpenCode server (normally unnecessary because `send` starts it automatically) |
-| `agentrelay oc-attach [dir] [--port N]` | Open a live OpenCode TUI on the project's shared server, starting the server when needed |
-| `agentrelay mcp` | Run as a stdio MCP server exposing the same operations as tools |
+| `openacom list [query...] [--agent zcode\|claude\|codex] [--limit N] [--json]` | Unified session table with **fuzzy search** (agent/id/title/workspace, space-separated AND); top 30 by default, `--limit N` overrides |
+| `openacom read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
+| `openacom send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply (opencode targets steer the exact session live — never forked — and stream the turn in the CLI; blocking by default, `--no-wait` detaches) |
+| `openacom paths` | Show detected storage locations and CLI paths |
+| `openacom inbox [--status S] [--limit N] [--json]` | Tracked sends and their read status (`sent` awaiting ack / `read` / `failed`) |
+| `openacom ack <messageId>` | Manually mark a tracked message as read |
+| `openacom oc-serve [dir] [--port N]` | Pre-warm a project's shared OpenCode server (normally unnecessary because `send` starts it automatically) |
+| `openacom oc-attach [dir] [--port N]` | Open a live OpenCode TUI on the project's shared server, starting the server when needed |
+| `openacom mcp` | Run as a stdio MCP server exposing the same operations as tools |
 
 Session ids are matched across all four agents automatically; pass `--agent`
 when an id could be ambiguous or to skip the full scan.
 
 ## Use as an MCP server
 
-`agentrelay mcp` runs a stdio MCP server exposing `list_sessions`,
+`openacom mcp` runs a stdio MCP server exposing `list_sessions`,
 `read_session`, `send_message`, `get_paths` — so any MCP client can drive your
 other agents. Three distributed-messaging tools (`relay_nodes`, `relay_send`,
 `relay_status`) light up as well when the process has `AGENTRELAY_URL` +
@@ -242,41 +244,41 @@ to your install):
 Claude Code:
 
 ```bash
-claude mcp add agentrelay -- node /path/to/agent-relay/bin/agentrelay.js mcp
+claude mcp add openacom -- node /path/to/openacom/bin/openacom.js mcp
 ```
 
 Claude Desktop (`%APPDATA%\Claude\claude_desktop_config.json`):
 
 ```json
-{ "mcpServers": { "agentrelay": {
+{ "mcpServers": { "openacom": {
     "command": "node",
-    "args": ["C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"]
+    "args": ["C:\\path\\to\\openacom\\bin\\openacom.js", "mcp"]
 } } }
 ```
 
 Codex (`~/.codex/config.toml`):
 
 ```toml
-[mcp_servers.agentrelay]
+[mcp_servers.openacom]
 command = "node"
-args = ['C:\path\to\agent-relay\bin\agentrelay.js', 'mcp']
+args = ['C:\path\to\openacom\bin\openacom.js', 'mcp']
 ```
 
 ZCode (`~/.zcode/cli/config.json`):
 
 ```json
-{ "mcp": { "servers": { "agentrelay": {
+{ "mcp": { "servers": { "openacom": {
     "command": "node",
-    "args": ["C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"]
+    "args": ["C:\\path\\to\\openacom\\bin\\openacom.js", "mcp"]
 } } } }
 ```
 
 OpenCode (`~/.config/opencode/opencode.jsonc`):
 
 ```json
-{ "mcp": { "agentrelay": {
+{ "mcp": { "openacom": {
     "type": "local",
-    "command": ["node", "C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"],
+    "command": ["node", "C:\\path\\to\\openacom\\bin\\openacom.js", "mcp"],
     "enabled": true
 } } }
 ```
@@ -293,7 +295,7 @@ CLI streams the turn live — session header, tool progress, then the reply —
 so a steer is visible the moment it happens:
 
 ```
-$ agentrelay send ses_f4fa6e7b... "Continue with the next step"
+$ openacom send ses_f4fa6e7b... "Continue with the next step"
 > build · muse-spark-1.3-contributor-free
 → Read src/index.ts
 Done, next step implemented.
@@ -312,18 +314,18 @@ delivered turn only after you reopen it — the same staleness zcode's desktop
 had. OpenCode's own fix is a persistent server: it is the single event source
 and pushes every turn over SSE to TUIs attached to it.
 
-AgentRelay rides that with zero manual steps: every `send` to an opencode
+OpenAcom rides that with zero manual steps: every `send` to an opencode
 session **ensures the project's shared server by itself** — reuse when up,
 start when missing — then posts `POST /session/<id>/message`, so **every
 attached TUI shows the turn live**: the user message, tool progress, the
 streaming reply.
 
 ```
-$ agentrelay send ses_f4fa6e7b... "Continue with the next step"
+$ openacom send ses_f4fa6e7b... "Continue with the next step"
 opencode server started for F:/Saba - live TUI: opencode attach http://127.0.0.1:44231
 Done, next step implemented.
 [session: ses_f4fa6e7b...]
-$ agentrelay oc-attach F:/Saba             # opens the live TUI; no URL lookup or paste
+$ openacom oc-attach F:/Saba             # opens the live TUI; no URL lookup or paste
 ```
 
 - The attach hint prints exactly once, when the send booted the server.
@@ -338,10 +340,10 @@ $ agentrelay oc-attach F:/Saba             # opens the live TUI; no URL lookup o
   delivery always works, live refresh is the upgrade.
 - Blocking sends return the finished reply from the server; `--no-wait` posts
   through a detached helper so the turn survives the CLI exiting.
-- `agentrelay oc-serve [dir] [--port N]` only pre-warms the server (and
+- `openacom oc-serve [dir] [--port N]` only pre-warms the server (and
   prints the attach line) without sending. Same behavior flows through MCP
   `send_message` automatically — one interface, CLI and MCP alike.
-- `agentrelay oc-attach [dir] [--port N]` is the one-step viewer command: it
+- `openacom oc-attach [dir] [--port N]` is the one-step viewer command: it
   starts the same server when needed and attaches a TUI in the current terminal.
 
 ### Read receipts — tracked sends that redeliver until acknowledged
@@ -354,20 +356,20 @@ to actually **receive and process** a message, add `--require-read` (CLI) or
   ack — by calling the `ack_message` MCP tool, or (works even before the
   target's MCP process has restarted with the new tools) by simply replying
   with a line containing `ACK-<id>`;
-- AgentRelay watches for the ack (tool call or assistant reply token). No ack
+- OpenAcom watches for the ack (tool call or assistant reply token). No ack
   within `--ack-timeout` (default 90s) → **automatic redelivery**, 3 attempts
   total; still nothing → the message is declared `failed` and the sender gets
   an honest error instead of a fake OK.
 
 ```
-$ agentrelay send sess_... "部署状态如何？" --agent zcode --require-read
+$ openacom send sess_... "部署状态如何？" --agent zcode --require-read
 READ (attempt 1/3)            # target acknowledged
-$ agentrelay send sess_... "紧急..." --agent zcode --require-read --ack-timeout 30000
+$ openacom send sess_... "紧急..." --agent zcode --require-read --ack-timeout 30000
 FAILED after 3 attempts — target never acknowledged
 ```
 
-Every tracked send lives in the local inbox (`~/.agentrelay/inbox.sqlite`):
-`agentrelay inbox` (or the MCP `inbox` tool) lists statuses, `agentrelay ack
+Every tracked send lives in the local inbox (`~/.openacom/inbox.sqlite`):
+`openacom inbox` (or the MCP `inbox` tool) lists statuses, `openacom ack
 <id>` / MCP `ack_message` marks read. A target that never acks — offline
 agent, dead session, a human who stopped caring — is *reported*, not retried
 forever: 3 strikes and the sender is told. Note the ack waits in the calling
@@ -376,7 +378,7 @@ your MCP timeout above that.
 
 ### Fresh sessions — recommended for agent-to-agent traffic (zcode)
 
-`agentrelay send --fresh <message>` runs the message in a **brand-new** zcode
+`openacom send --fresh <message>` runs the message in a **brand-new** zcode
 session (headless, synchronous reply, `sessionId` returned). New sessions appear
 in the desktop app's task list automatically, and opening one loads its full
 transcript — so your agent traffic stays visible in the desktop without ever
@@ -384,7 +386,7 @@ injecting into a conversation the user has open (which the app would not
 re-render anyway: it keeps open sessions in memory and never re-reads the DB).
 
 ```
-$ agentrelay send "Summarize the API research" --json
+$ openacom send "Summarize the API research" --json
 { "ok": true, "sessionId": "sess_...", "reply": "..." }
 ```
 
@@ -406,7 +408,7 @@ can go stale.
 ### Remote agents (e.g. Claude Code on an SSH server) - HTTP transport
 
 stdio MCP servers can only be spawned by local clients. For agents running on
-another machine, AgentRelay also speaks streamable HTTP:
+another machine, OpenAcom also speaks streamable HTTP:
 
 ```powershell
 # on the Windows machine (one-time per boot):
@@ -418,7 +420,7 @@ elay-remote-up.ps1 -SshHost root@your-server
 Then on the server, register it in Claude Code (`~/.claude.json`):
 
 ```json
-{ "mcpServers": { "agentrelay": { "type": "http", "url": "http://127.0.0.1:9321/mcp" } } }
+{ "mcpServers": { "openacom": { "type": "http", "url": "http://127.0.0.1:9321/mcp" } } }
 ```
 
 The remote agent gets the same four tools operating on your **local** sessions.
@@ -428,7 +430,7 @@ Traffic stays inside the SSH tunnel; both endpoints bind localhost only.
 ### ZCode provides no session API - how sending was made possible
 
 ZCode desktop keeps every conversation in a local SQLite database
-(`~/.zcode/cli/db/db.sqlite`, `message` + `part` tables). AgentRelay reads
+(`~/.zcode/cli/db/db.sqlite`, `message` + `part` tables). OpenAcom reads
 sessions straight from that DB. Sending required reverse-engineering three
 delivery routes:
 
@@ -445,7 +447,7 @@ delivery routes:
   row into the internal session_input queue is ignored). Messages still land and
   the agent still processes them - only the open window does not repaint.
 - **CDP route (the default; the only visible route)**: start the app with
-  `--remote-debugging-port=9222` and AgentRelay drives the renderer directly -
+  `--remote-debugging-port=9222` and OpenAcom drives the renderer directly -
   locate the session row in the sidebar, focus the composer, insert the message
   as trusted input, press Enter. The turn runs *inside* the app: live refresh,
   native message chain, and with `zcodeInteractionBehavior: "guide"` a message
@@ -459,7 +461,7 @@ delivery routes:
 
 Claude sessions on SSH workspaces keep only a transcript mirror locally; the
 live process (`ccd-cli --resume=<id> --input-format stream-json`) runs on the
-server and consumes user turns from its stdin. AgentRelay:
+server and consumes user turns from its stdin. OpenAcom:
 
 1. resolves the host from the `ssh:<host>:<cwd>` project keys in
    `~/.claude.json` (e.g. `ssh:root@1.2.3.4:/root/TokenGateway`);
@@ -472,7 +474,7 @@ Claude desktop in real time and the chain stays native.
 ### Remote agents driving local sessions
 
 stdio MCP servers can only be spawned by local clients, so for agents on other
-machines AgentRelay also speaks streamable HTTP, paired with an SSH reverse
+machines OpenAcom also speaks streamable HTTP, paired with an SSH reverse
 tunnel (`tools/relay-remote-up.ps1`). The script listens on `127.0.0.1:9322`
 locally (9321 is commonly taken by other desktop apps) and maps the remote's
 unchanged `9321` onto it, so the remote client registers
@@ -520,12 +522,12 @@ asynchronously in the app).
 | zcode  | `~/.zcode/cli/db/db.sqlite`            | `zcode.cjs --resume <id> --prompt <msg>`         |
 | opencode | `~/.local/share/opencode/opencode.db`  | `opencode run -s <id>` (message via stdin)       |
 
-Everything runs locally against your existing installs; AgentRelay itself adds no
+Everything runs locally against your existing installs; OpenAcom itself adds no
 service, port, or daemon.
 
 **Remote (SSH) Claude workspaces** appear in `list`/`read` with an `ssh:` prefix on
 the workspace; subagent transcripts (`agent-*.jsonl`) are never listed as sessions.
-`send` to a remote session is supported: AgentRelay resolves the SSH host from the
+`send` to a remote session is supported: OpenAcom resolves the SSH host from the
 `ssh:<host>:<cwd>` keys in `~/.claude.json`, finds the live session runner process
 (`--resume=<id>`) on that host, and injects the message into its stdin as a
 stream-json user turn — the turn runs inside the live process, so the reply streams
@@ -578,33 +580,35 @@ handling applies.
 
 ## 中文说明
 
-**AgentRelay**：一个 MCP/CLI 命令，跨桌面端与 CLI、跨本地与远程机器，统一管理 **Claude Code / Codex / ZCode / OpenCode** 的 agent 会话。
+**开源、分布式、安全的 agent 通信。**
 
-- `agentrelay list [关键词...]` — 四家 session 混合列表 + **模糊搜索**（匹配 agent/ID/标题/工作区，多词 AND），默认 top 30，`--limit N` 覆盖
-- `agentrelay read <sessionId>` — 读取任意 session 的最近对话（自动跨四家匹配 id）
-- `agentrelay send <消息>` / `send <sessionId> <消息>` — 注入**真实用户回合**。默认异步
+**OpenAcom**：一个 MCP/CLI 命令，跨桌面端与 CLI、跨本地与远程机器，统一管理 **Claude Code / Codex / ZCode / OpenCode** 的 agent 会话。
+
+- `openacom list [关键词...]` — 四家 session 混合列表 + **模糊搜索**（匹配 agent/ID/标题/工作区，多词 AND），默认 top 30，`--limit N` 覆盖
+- `openacom read <sessionId>` — 读取任意 session 的最近对话（自动跨四家匹配 id）
+- `openacom send <消息>` / `send <sessionId> <消息>` — 注入**真实用户回合**。默认异步
   （发完即返回，回复落在会话转录里，用 `read` 查看）；加 `--wait` 则阻塞等回复并打印。
   **opencode 例外**：直接 steer 目标会话原地执行（永不 `--fork`），CLI 默认阻塞并实时
   流式打印（头部、工具进度、回复），`--no-wait` 才走后台；`--json` 时实时流走 stderr，
   stdout 只留干净的最终回复
-- `agentrelay oc-serve [目录] [--port N]` — 预热项目目录的**共享 opencode
+- `openacom oc-serve [目录] [--port N]` — 预热项目目录的**共享 opencode
   server**（确定性端口 = 目录哈希，44000-44996），并打印可直接粘贴的 attach
   命令。平时不需要手动跑：`send` 发往 opencode 会话时会自动起服、自动复用，
   首次起服时 CLI 只提示一次 attach 行；起不了服则自动回退 `opencode run`
   路径，投递永远可用（`AGENTRELAY_OPENCODE_NOSERVE=1` 可彻底关掉自动起服）
-- `agentrelay oc-attach [目录] [--port N]` — 一步打开该项目共享 server 的实时
+- `openacom oc-attach [目录] [--port N]` — 一步打开该项目共享 server 的实时
   TUI；server 未启动时会自动启动，不需要查端口或复制 URL
-- `agentrelay paths` — 显示探测到的存储路径与 CLI
-- `agentrelay inbox [--status S] [--limit N] [--json]` — 查看带已读回执的发送记录
+- `openacom paths` — 显示探测到的存储路径与 CLI
+- `openacom inbox [--status S] [--limit N] [--json]` — 查看带已读回执的发送记录
   （`sent` 待回执 / `read` 已读 / `failed` 三次未回执判死）
-- `agentrelay ack <messageId>` — 手动把一条追踪消息标记为已读
+- `openacom ack <messageId>` — 手动把一条追踪消息标记为已读
 - **已读回执模式**：`send ... --require-read`（或 MCP `send_message` 的
   `requireRead: true`）——消息尾附带回执单（唯一 id），对方处理后调 `ack_message`
   工具、或回复中包含 `ACK-<id>` 即算已读；超时未回执（默认 90s，`--ack-timeout`
   可调）自动重发，**最多 3 次**，仍无回执则判 `failed` 并如实上报——不再给发送方
-  假 OK。记录落在本地收件箱 `~/.agentrelay/inbox.sqlite`。注意：该模式会阻塞等待
+  假 OK。记录落在本地收件箱 `~/.openacom/inbox.sqlite`。注意：该模式会阻塞等待
   回执（最坏 ~3×超时），调用方 MCP 超时要留够
-- `agentrelay mcp` — 以 stdio MCP server 运行：基础 4 工具（`list_sessions` /
+- `openacom mcp` — 以 stdio MCP server 运行：基础 4 工具（`list_sessions` /
   `read_session` / `send_message` / `get_paths`）接入 Claude Code、Claude Desktop、
   Codex、ZCode 等 MCP 客户端，配置示例见上方英文段；当进程环境配置了
   `AGENTRELAY_URL` + `AGENTRELAY_TOKEN` 时，还会启用分布式三件套
@@ -614,7 +618,7 @@ handling applies.
   （`--resume=<id>`），以 stream-json 用户回合注入其 stdin，回复实时流回桌面应用。
   若目标会话当前未运行，先在桌面应用里启动一次
 
-安装：`npm install -g github:wwy155/agent-relay`（需 Node ≥ 22.5）。
+安装：`npm install -g github:wwy155/openacom`（需 Node ≥ 22.5）。
 
 **发送的前提**：claude 需要 `claude` CLI 在 PATH 且 API 可达；codex 需要 `codex` CLI 已认证；
 zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI` 指定），且
@@ -630,7 +634,7 @@ session 发送可能抢占当前轮次；session 存储格式是四家 agent 的
 `resources\config\provider\`）。无头报「无法定位 CLI ZCode Built-in Provider Config」
 时，把 `zcode-builtin.json` 复制到报错指出的路径即可；CDP 可见投递不依赖此文件。
 
-**fresh 会话模式（默认的 agent 间通信）**：`agentrelay send <消息>`（不带 sessionId
+**fresh 会话模式（默认的 agent 间通信）**：`openacom send <消息>`（不带 sessionId
 即走此模式；`--fresh` 为显式形式）在一个
 **全新** zcode 会话里执行消息（无头、同步拿回复、返回 sessionId）。新会话会自动出现在
 桌面应用的任务列表里，点开即可读完整记录——agent 流量对桌面始终可见，且完全不碰
@@ -652,7 +656,7 @@ ZCode 桌面把全部对话存在本地 SQLite（`~/.zcode/cli/db/db.sqlite`，`
   外部写的队列表行无人认领；无 TCP/管道控制面；直接插 `session_input` 也被无视）。
   消息其实已送达、agent 也处理了，只是开着的窗口不重绘。
 - **CDP 路线（默认路线，也是唯一可见路线）**：桌面以 `--remote-debugging-port=9222`
-  启动后，AgentRelay 直接驱动渲染层——侧边栏定位会话行、聚焦输入框、以受信任输入
+  启动后，OpenAcom 直接驱动渲染层——侧边栏定位会话行、聚焦输入框、以受信任输入
   插入消息、回车。回合在应用**内部**执行：实时刷新、消息链原生；配合
   `zcodeInteractionBehavior: "guide"`，回合进行中到达的消息直接**抢占引导**运行中的
   agent 而非排队。窗口最小化/后台照常（渲染层事件，不抢 OS 焦点）。这是向"用户正
@@ -664,7 +668,7 @@ ZCode 桌面把全部对话存在本地 SQLite（`~/.zcode/cli/db/db.sqlite`，`
 
 SSH 工作区的 Claude 会话在本地只有转录镜像；活进程
 （`ccd-cli --resume=<id> --input-format stream-json`）跑在服务器上、从 stdin 消费用户
-回合。AgentRelay：① 从 `~/.claude.json` 的 `ssh:<host>:<cwd>` 项目键解析主机；
+回合。OpenAcom：① 从 `~/.claude.json` 的 `ssh:<host>:<cwd>` 项目键解析主机；
 ② SSH 上去按 `--resume=<id>` 找活进程；③ 往 `/proc/<pid>/fd/0` 写一行 stream-json
 用户回合。回合在活进程内执行，回复实时流回 Claude 桌面，链原生。
 
@@ -679,12 +683,12 @@ stdio MCP 只能被同机客户端拉起，故另提供 HTTP 传输 + SSH 反向
 agent（如 SSH 里的 Claude Code）改用 HTTP 传输：Windows 上运行
 `tools/relay-remote-up.ps1`（启动本地 `127.0.0.1:9322` 的 MCP + SSH 反向隧道
 `服务器:9321 → 本地:9322`），再在服务器的 `~/.claude.json` 注册
-`{"mcpServers":{"agentrelay":{"type":"http","url":"http://127.0.0.1:9321/mcp"}}}`。
+`{"mcpServers":{"openacom":{"type":"http","url":"http://127.0.0.1:9321/mcp"}}}`。
 远程 agent 即获得操作**本地** session 的同一组工具；流量全程走 SSH 隧道，两端只绑
 localhost。重启电脑后需重跑 relay-remote-up.ps1。
 
 **desktop 模式（zcode / Windows）**：默认 zcode 的 `send` 走无头进程，直接写数据库，
-桌面窗口不会实时刷新。`agentrelay send <id> <消息> --desktop`（或 MCP 的 `desktop: true`）
+桌面窗口不会实时刷新。`openacom send <id> <消息> --desktop`（或 MCP 的 `desktop: true`）
 改走 CDP：在桌面应用侧边栏定位会话 → 向真实输入框注入受信任输入事件 → 回车发送。
 回合由桌面应用自己执行——**窗口实时刷新、消息链原生**；若该会话正在跑回合，消息会以
 guide 模式抢占（运行中的 agent 立即看到；需桌面设置 `zcodeInteractionBehavior: "guide"`）。

@@ -1,7 +1,7 @@
-# Bring up remote access to the local AgentRelay MCP:
+# Bring up remote access to the local OpenAcom MCP:
 #   1) streamable-http MCP server on 127.0.0.1:9322 (if not already running)
 #   2) SSH reverse tunnel <server>:9321 -> this machine:9322 (if not already up)
-# Local 9321 is owned by the Orca desktop app now, so agentrelay listens on
+# Local 9321 is owned by the Orca desktop app now, so openacom listens on
 # 9322 and the tunnel maps the remote's unchanged 9321 onto it. The remote
 # machine's Claude still uses http://127.0.0.1:9321/mcp.
 # Usage: powershell -File relay-remote-up.ps1 [-SshHost root@host] [-LocalPort 9322] [-RemotePort 9321]
@@ -9,22 +9,22 @@ param([string]$SshHost = 'root@156.238.253.180', [int]$LocalPort = 9322, [int]$R
 
 $ErrorActionPreference = 'Continue'
 $repo = Split-Path -Parent $PSScriptRoot
-$logDir = "$env:USERPROFILE\.agentrelay\logs"
+$logDir = "$env:USERPROFILE\.openacom\logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
 # 1) HTTP MCP server (local port 9322; 9321 belongs to Orca now)
 $alive = $false
 try {
   $h = Invoke-RestMethod "http://127.0.0.1:$LocalPort/health" -TimeoutSec 2
-  $alive = ($h.ok -eq $true) -and ($h.server -eq 'agentrelay')
+  $alive = ($h.ok -eq $true) -and ($h.server -eq 'openacom')
 } catch {}
 if (-not $alive) {
   $log = "$logDir\mcp-http.log"
-  Start-Process -WindowStyle Hidden node -ArgumentList "`"$repo\bin\agentrelay.js`" mcp-http $LocalPort" -RedirectStandardError "$log.err" -RedirectStandardOutput "$log.out"
+  Start-Process -WindowStyle Hidden node -ArgumentList "`"$repo\bin\openacom.js`" mcp-http $LocalPort" -RedirectStandardError "$log.err" -RedirectStandardOutput "$log.out"
   Start-Sleep -Seconds 2
   try {
     $h = Invoke-RestMethod "http://127.0.0.1:$LocalPort/health" -TimeoutSec 3
-    $alive = ($h.ok -eq $true) -and ($h.server -eq 'agentrelay')
+    $alive = ($h.ok -eq $true) -and ($h.server -eq 'openacom')
   } catch {}
 }
 Write-Output ("mcp-http: " + ($(if ($alive) { "up on 127.0.0.1:$LocalPort" } else { "FAILED to start (check $logDir\mcp-http.log)" })))

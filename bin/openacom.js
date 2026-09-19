@@ -5,22 +5,22 @@ const { adaptersToUse, findSession } = require('../lib/core');
 const ADAPTERS = require('../lib/core').ADAPTERS;
 const { fmtTime, printTable, truncate, whichCli, resolveZcodeCli, zcodeConfigPath } = require('../lib/util');
 
-const HELP = `AgentRelay — one MCP/CLI command managing agent sessions across desktops and CLIs (Claude Code / Codex / ZCode / OpenCode), local and remote
+const HELP = `OpenAcom — one MCP/CLI command managing agent sessions across desktops and CLIs (Claude Code / Codex / ZCode / OpenCode), local and remote
 
 Usage:
-  agentrelay list  [query...] [--agent zcode|claude|codex|opencode] [--limit N] [--json]   fuzzy search (title/id/workspace), top 30 default
-  agentrelay read  <sessionId> [--agent A] [--last N] [--json]
-  agentrelay send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
-  agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait] [--no-wait]  resume a session
-  agentrelay send  <sessionId> <message...> --require-read [--ack-timeout ms]  send with read receipt: auto-redeliver until acked, 3 attempts max
-  agentrelay inbox [--status pending|sent|read|failed] [--limit N] [--json]  tracked sends and their read status
-  agentrelay ack    <messageId>    manually mark a tracked message as read
-  agentrelay paths
-  agentrelay oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)
-  agentrelay oc-attach [dir] [--port N]   open a live TUI on the project's shared server (starts it if needed)
-  agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
-  agentrelay relay --help   durable multi-machine messaging over SSH-forwardable HTTP
-  agentrelay terminal --name TARGET -- PROGRAM [ARGS...]   visible, controlled TUI input
+  openacom list  [query...] [--agent zcode|claude|codex|opencode] [--limit N] [--json]   fuzzy search (title/id/workspace), top 30 default
+  openacom read  <sessionId> [--agent A] [--last N] [--json]
+  openacom send  <message...>             fresh zcode session per message (recommended; visible in the desktop task list)
+  openacom send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait] [--no-wait]  resume a session
+  openacom send  <sessionId> <message...> --require-read [--ack-timeout ms]  send with read receipt: auto-redeliver until acked, 3 attempts max
+  openacom inbox [--status pending|sent|read|failed] [--limit N] [--json]  tracked sends and their read status
+  openacom ack    <messageId>    manually mark a tracked message as read
+  openacom paths
+  openacom oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)
+  openacom oc-attach [dir] [--port N]   open a live TUI on the project's shared server (starts it if needed)
+  openacom mcp   Run as a stdio MCP server exposing the same operations as tools
+  openacom relay --help   durable multi-machine messaging over SSH-forwardable HTTP
+  openacom terminal --name TARGET -- PROGRAM [ARGS...]   visible, controlled TUI input
 
 Notes:
   - sessionId is matched across all agents unless --agent pins one.
@@ -97,7 +97,7 @@ function cmdRead(flags) {
   const id = flags._[0];
   if (!id) die('read needs a sessionId');
   const hits = findSession(id, flags.agent);
-  if (hits.length === 0) die(`session not found: ${id} (run "agentrelay list")`);
+  if (hits.length === 0) die(`session not found: ${id} (run "openacom list")`);
   if (hits.length > 1) die(`session id exists in ${hits.map((h) => h.name).join(' & ')}; pass --agent`);
   const a = hits[0];
   const turns = a.messages(id, flags.last || 10);
@@ -136,7 +136,7 @@ async function cmdSend(flags) {
   const message = rest.join(' ');
   if (!message) die(idLike ? `found session ${id} but no message text (append the message, or use --fresh)` : 'send needs: <sessionId> <message...>');
   const hits = findSession(id, flags.agent);
-  if (hits.length === 0) die(`session not found: ${id} (run "agentrelay list")`);
+  if (hits.length === 0) die(`session not found: ${id} (run "openacom list")`);
   if (hits.length > 1) die(`session id exists in ${hits.map((h) => h.name).join(' & ')}; pass --agent`);
   const a = hits[0];
   if (flags.desktop) {
@@ -248,6 +248,24 @@ async function cmdOcAttach(flags) {
   process.exit(r.status ?? 0);
 }
 
+function cmdHooks() {
+  const hooks = require('../lib/hooks');
+  const loaded = hooks.loadHooks();
+  console.log(`hooks file: ${hooks.hooksFile()}`);
+  for (const ev of hooks.EVENTS) {
+    const cmds = loaded[ev] || [];
+    console.log(`  ${ev.padEnd(16)} ${cmds.length ? cmds.join(' , ') : '(none)'}`);
+  }
+  console.log('\nevent JSON goes to each command\'s stdin; failures log to ~/.openacom/logs/hooks.log');
+}
+
+async function cmdWeb(flags) {
+  const port = flags.port || parseInt(flags._[0], 10) || 9339;
+  await require('../lib/web').startWeb(port);
+  // keep the process alive; server handles requests
+  setInterval(() => {}, 1 << 30);
+}
+
 function cmdInbox(flags) {
   const inbox = require('../lib/inbox');
   const rows = inbox.list({ status: flags.status, limit: flags.limit && flags.limit > 0 ? flags.limit : 30 });
@@ -292,6 +310,8 @@ async function main() {
     case 'paths': return cmdPaths();
     case 'inbox': return cmdInbox(flags);
     case 'ack': return cmdAck(flags);
+    case 'hooks': return cmdHooks();
+    case 'web': return cmdWeb(flags);
     case 'oc-serve': return cmdOcServe(flags);
     case 'oc-attach': return cmdOcAttach(flags);
     case 'mcp': return require('../lib/mcp').run();

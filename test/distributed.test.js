@@ -10,7 +10,7 @@ const token = 'test-only-secret-'.repeat(4);
 async function stop(server) { await new Promise((resolve, reject) => server.close(e => e ? reject(e) : resolve())); }
 
 test('queued message survives restart and enqueue retries cannot alter it', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentrelay-queue-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openacom-queue-'));
   let hub;
   try {
     hub = await runHub({ host: '127.0.0.1', port: 0, dataDir: dir, token });
@@ -36,7 +36,7 @@ test('queued message survives restart and enqueue retries cannot alter it', asyn
 });
 
 test('claim is exclusive and hub restart never automatically replays UI side effects', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentrelay-claim-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openacom-claim-'));
   let hub;
   try {
     hub = await runHub({ host: '127.0.0.1', port: 0, dataDir: dir, token });

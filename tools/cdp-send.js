@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// AgentRelay desktop-mode sender via CDP (renderer-level, no OS focus steal).
+// OpenAcom desktop-mode sender via CDP (renderer-level, no OS focus steal).
 // Selects the session in the sidebar by title prefix, focuses the composer,
 // inserts the message as trusted input, presses Enter. Requires ZCode started
 // with --remote-debugging-port (tools/start-zcode-cdp.ps1).

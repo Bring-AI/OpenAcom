@@ -1,4 +1,4 @@
-# AgentRelay desktop-mode sender for ZCode (Windows only).
+# OpenAcom desktop-mode sender for ZCode (Windows only).
 # Drives the real ZCode desktop UI: selects the session in the sidebar, types the
 # message into the composer and presses Enter. The turn runs inside the desktop
 # app, so its window live-updates and the message chain stays native.

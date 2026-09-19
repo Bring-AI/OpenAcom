@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>OpenAcom 文档</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3; --dim:#8b949e; --accent:#58a6ff; --green:#3fb950; --yellow:#d29922; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; }
+  header { padding:14px 24px; border-bottom:1px solid var(--border); display:flex; gap:16px; align-items:center; position:sticky; top:0; background:var(--bg); }
+  header h1 { font-size:16px; margin:0; }
+  header a { color:var(--accent); text-decoration:none; font-size:13px; }
+  nav { position:fixed; top:60px; left:0; bottom:0; width:200px; border-right:1px solid var(--border); padding:16px 0; }
+  nav a { display:block; color:var(--dim); text-decoration:none; padding:5px 20px; font-size:13px; }
+  nav a:hover { color:var(--fg); }
+  main { margin-left:200px; padding:24px 32px; max-width:900px; }
+  h2 { border-bottom:1px solid var(--border); padding-bottom:6px; margin-top:40px; font-size:18px; }
+  h3 { font-size:15px; margin-top:26px; }
+  code { background:var(--panel); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font:12px Consolas,monospace; }
+  pre { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:12px 14px; overflow-x:auto; font:12.5px/1.6 Consolas,monospace; }
+  pre code { background:none; border:none; padding:0; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:13px; }
+  th,td { border:1px solid var(--border); padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); }
+  td code { white-space:nowrap; }
+  .tag { display:inline-block; border-radius:4px; padding:0 8px; font-size:12px; }
+  .tag.g { background:rgba(63,185,80,.15); color:var(--green); }
+  .tag.y { background:rgba(210,153,34,.15); color:var(--yellow); }
+  .note { border-left:3px solid var(--accent); background:var(--panel); padding:8px 14px; border-radius:0 6px 6px 0; margin:12px 0; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>OpenAcom 文档</h1>
+  <a href="/">← 收件箱</a>
+  <a href="https://github.com/wwy155/openacom#readme" target="_blank">GitHub README（完整版）</a>
+  <span style="color:var(--dim);font-size:12px;margin-left:auto" id="ver"></span>
+</header>
+<nav>
+  <a href="#quick">快速开始</a>
+  <a href="#cli">CLI 命令</a>
+  <a href="#mcp">MCP 工具</a>
+  <a href="#receipt">已读回执</a>
+  <a href="#hooks">Hooks 事件</a>
+  <a href="#sdk">Node SDK</a>
+  <a href="#distributed">分布式 relay</a>
+</nav>
+<main>
+
+<h2 id="quick">快速开始</h2>
+<pre><code>npm install -g github:wwy155/openacom   # Node ≥ 22.5
+
+openacom list                # 四家 agent 会话混合列表（模糊搜索，默认 top30）
+openacom read &lt;sessionId&gt;    # 读任意会话最近对话
+openacom send &lt;sessionId&gt; "消息" --require-read   # 带已读回执发送
+openacom web                 # 本页 + 收件箱面板</code></pre>
+
+<h2 id="cli">CLI 命令</h2>
+<table>
+  <tr><th>命令</th><th>说明</th></tr>
+  <tr><td><code>list [关键词...] [--agent A] [--limit N]</code></td><td>zcode / claude / codex / opencode 四家会话混合列表，多词 AND 模糊搜索（匹配 agent/ID/标题/工作区），默认 top30</td></tr>
+  <tr><td><code>read &lt;sessionId&gt; [--last N]</code></td><td>读任意会话最近回合，系统噪声已过滤，自动跨四家匹配 id</td></tr>
+  <tr><td><code>send &lt;消息&gt;</code></td><td>在全新 zcode 会话执行（默认异步），新会话自动出现在桌面任务列表</td></tr>
+  <tr><td><code>send &lt;sessionId&gt; &lt;消息&gt;</code></td><td>向指定会话注入真实用户回合。zcode 走桌面 CDP（失败直接报错）；opencode 直接 steer 原会话并实时流式；<code>--wait</code> 阻塞等回复，<code>--no-wait</code>/<code>--no-desktop</code> 显式降级</td></tr>
+  <tr><td><code>send ... --require-read [--ack-timeout ms]</code></td><td><b>已读回执模式</b>：未回执自动重发（共 3 次），仍无回执判 <code>failed</code></td></tr>
+  <tr><td><code>inbox [--status S] [--json]</code></td><td>查看追踪消息及状态：sent 待回执 / read 已读 / failed 判死</td></tr>
+  <tr><td><code>ack &lt;messageId&gt;</code></td><td>手动把一条追踪消息标记为已读</td></tr>
+  <tr><td><code>hooks</code></td><td>查看已配置的事件钩子</td></tr>
+  <tr><td><code>web [port]</code></td><td>启动收件箱面板 + 本文档（默认 127.0.0.1:9339）</td></tr>
+  <tr><td><code>oc-serve / oc-attach [目录]</code></td><td>opencode 共享 server：预热 / 一步打开实时 TUI</td></tr>
+  <tr><td><code>mcp</code> / <code>mcp-http [port]</code></td><td>stdio / streamable-HTTP MCP 服务器</td></tr>
+  <tr><td><code>relay ...</code> / <code>terminal ...</code></td><td>分布式消息（hub/node/send/status）与托管终端，见下方分布式节</td></tr>
+</table>
+
+<h2 id="mcp">MCP 工具</h2>
+<p>stdio 服务器暴露的基础工具（任何 MCP 客户端可接）：</p>
+<table>
+  <tr><th>工具</th><th>说明</th></tr>
+  <tr><td><code>list_sessions</code></td><td>会话列表，支持 <code>query</code> 模糊搜索 + <code>limit</code>（默认30）</td></tr>
+  <tr><td><code>read_session</code></td><td>读会话最近 <code>last</code> 个回合</td></tr>
+  <tr><td><code>send_message</code></td><td>必填 <code>from</code>/<code>to</code>（<code>agent:sessionId</code> 地址）。默认 fire-and-forget；<code>wait:true</code> 阻塞等回复；<code>requireRead:true</code> 开启已读回执；<code>to:"zcode:new"</code> 发新会话</td></tr>
+  <tr><td><code>get_paths</code></td><td>各 agent 存储路径与 CLI 位置（诊断用）</td></tr>
+  <tr><td><code>ack_message</code> <span class="tag g">回执</span></td><td>目标 agent 处理消息后标记已读（id 在消息页脚）</td></tr>
+  <tr><td><code>inbox</code> <span class="tag g">回执</span></td><td>查询追踪消息状态（可按 <code>status</code> 过滤）</td></tr>
+</table>
+<p>配置 <code>AGENTRELAY_URL</code> + <code>AGENTRELAY_TOKEN</code> 环境变量后额外启用分布式三件套
+<code>relay_nodes</code> / <code>relay_send</code> / <code>relay_status</code>。四个本地基础工具从不依赖 Hub。</p>
+
+<h2 id="receipt">已读回执语义</h2>
+<pre><code>openacom send sess_x "部署状态如何？" --require-read
+→ READ (attempt 1/3)          # 对方已确认
+openacom send sess_x "紧急…" --require-read --ack-timeout 30000
+→ FAILED after 3 attempts     # 3 次无回执，如实报错</code></pre>
+<ul>
+  <li>消息尾附回执单：<code>[read-receipt] … ack_message(id="…") 或回复包含 ACK-&lt;id&gt;</code></li>
+  <li>两条确认通道：<b>工具调用</b>（目标 MCP 需 ≥0.10.0 并重连）或 <b>回复 token</b>（旧版 MCP 也能用）</li>
+  <li>每次尝试等待 <code>--ack-timeout</code>（默认 90s）→ 超时自动重发 → 共 3 次 → 判 <code>failed</code></li>
+  <li>记录存于 <code>~/.openacom/inbox.sqlite</code>；投递失败也计入次数</li>
+  <li class="note" style="list-style:none">注意：requireRead 在调用进程内等待回执（最坏 ~3×超时），调用方 MCP 超时要留够</li>
+</ul>
+
+<h2 id="hooks">Hooks 事件</h2>
+<p>在 <code>~/.openacom/hooks.json</code> 配置，回执生命周期每到一个节点就触发对应命令
+（事件 JSON 写入命令 stdin；<code>AGENTRELAY_EVENT</code> / <code>AGENTRELAY_MESSAGE_ID</code> 在环境变量里；完全异步，钩子失败只记 <code>logs/hooks.log</code>，绝不影响投递）：</p>
+<table>
+  <tr><th>事件</th><th>触发时机</th></tr>
+  <tr><td><code>message.created</code></td><td>追踪消息创建（尚未投递）</td></tr>
+  <tr><td><code>message.sent</code></td><td>一次投递完成（attempts 更新）</td></tr>
+  <tr><td><code>message.read</code></td><td>收到回执（工具 ack 或回复 token）</td></tr>
+  <tr><td><code>message.failed</code></td><td>3 次尝试后仍未回执，判死</td></tr>
+</table>
+<pre><code>{
+  "message.read":   "node C:/scripts/notify.js",
+  "message.failed": ["node C:/scripts/alert.js", "msg.exe %USERNAME% 3次未回执"]
+}</code></pre>
+<p>事件体：<code>{"event":"message.read","at":1695…,"message":{id,from,to,agent,sessionId,status,attempts,maxAttempts,lastError,textPreview}}</code></p>
+<p>用 <code>openacom hooks</code> 查看当前生效配置。</p>
+
+<h2 id="sdk">Node SDK</h2>
+<p><code>npm install openacom</code>（或直接 <code>require('openacom/lib/index.js')</code>）：</p>
+<pre><code>const relay = require('openacom');
+
+relay.listSessions({ query: '组长', limit: 5 });        // 会话列表
+relay.readSession('sess_…', { last: 6 });               // 读最近回合
+
+await relay.send('sess_…', '你好', { agent: 'zcode' });  // 普通发送（等回执语义见 opts）
+await relay.send(null, '新会话消息', { fresh: true });    // 全新 zcode 会话
+
+const r = await relay.sendTracked('sess_…', '请确认部署', {
+  from: 'zcode:mySession', ackTimeoutMs: 90_000, maxAttempts: 3
+});
+// r = { id, status: 'read'|'failed', attempts, problems? }
+
+relay.inbox.list({ status: 'failed' });                  // 收件箱查询
+relay.inbox.markRead(id);                                // 标记已读
+relay.hooks.load();                                      // 当前钩子配置
+await relay.web.start(9339);                             // 启动面板+文档</code></pre>
+
+<h2 id="distributed">分布式 relay</h2>
+<p>跨机器用「带鉴权 Hub + SQLite 队列 + 各机器 Node 轮询」架构：消息持久化、幂等提交、
+崩溃不重放（uncertain 状态需人工核实）。目标类型两种：<code>terminal</code>（托管真实 TUI 的可见输入）
+和 <code>zcode</code>（桌面严格 CDP 投递，失败不降级）。完整配置步骤（token、SSH 转发、targets.json、
+输入锁）见 <a href="https://github.com/wwy155/openacom#readme" target="_blank">GitHub README</a> 的
+「分布式通信」章节；MCP 侧配好 <code>AGENTRELAY_URL/TOKEN</code> 即得 <code>relay_nodes/relay_send/relay_status</code> 三工具。</p>
+
+<pre style="text-align:center;background:none;border:none;color:var(--dim)">OpenAcom · one MCP/CLI command managing agent sessions
+across desktops and CLIs on different local/remote machines</pre>
+</main>
+<script>
+  fetch('/api/stats').catch(()=>{});
+  // version from MCP-free endpoint
+  fetch('/api/meta').then(r=>r.json()).then(m=>document.getElementById('ver').textContent='v'+m.version).catch(()=>{});
+</script>
+</body>
+</html>

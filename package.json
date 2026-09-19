@@ -1,17 +1,17 @@
 {
-  "name": "agentrelay",
-  "version": "0.10.0",
+  "name": "openacom",
+  "version": "0.11.0",
   "description": "One MCP/CLI command managing agent sessions across desktops and CLIs on different local/remote machines",
   "license": "MIT",
   "bin": {
-    "agentrelay": "bin/agentrelay.js"
+    "openacom": "bin/openacom.js"
   },
   "engines": {
     "node": ">=22.5.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wwy155/agent-relay.git"
+    "url": "git+https://github.com/wwy155/openacom.git"
   },
   "keywords": [
     "claude-code",
@@ -29,5 +29,9 @@
   },
   "dependencies": {
     "node-pty": "^1.1.0"
+  },
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
   }
 }

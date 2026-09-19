@@ -1,4 +1,4 @@
-# Start ZCode desktop with a local CDP debugging port (for AgentRelay desktop mode).
+# Start ZCode desktop with a local CDP debugging port (for OpenAcom desktop mode).
 # Usage: powershell -File start-zcode-cdp.ps1 [-Port 9222]
 # Quit ZCode first (tray icon -> exit); this script will wait and then relaunch it.
 param([int]$Port = 9222, [switch]$Force, [int]$DelaySec = 0)
