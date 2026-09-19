@@ -29,7 +29,8 @@ long-running session from CI.
 
 ## Install
 
-Requires Node.js ≥ 22.5 (uses the built-in `node:sqlite`).
+Requires Node.js ≥ 22.13 for normal invocation (uses built-in `node:sqlite`).
+Node 22.5–22.12 requires `--experimental-sqlite`; newer Node LTS is recommended.
 
 ```bash
 npm install -g github:wwy155/agent-relay
@@ -43,6 +44,163 @@ npm install -g ./agent-relay
 ```
 
 or run in place without installing: `node bin/agentrelay.js …`
+
+## 分布式通信：真实 TUI 输入，而不是后台续跑
+
+新增的 `relay` 命令与旧的 `send` 独立：旧 `send` 的 Claude/Codex
+后台 resume **不保证当前 TUI 可见**；需要可见输入请使用下面的终端托管方式。
+
+架构：发送端 → 带鉴权的 Hub / SQLite 消息队列 ← 各机器主动轮询的 Node
+→ 本机白名单目标。机器之间不需要互相开放端口；只需要能通过 SSH 转发访问
+同一个 Hub。没有任何可互通路径时，仍需要一台可达的 SSH 跳板机或组网服务。
+
+### 1. 启动 Hub
+
+```powershell
+npm install
+# 生成一次；通过可信渠道把同一个 token 配置到各参与机器，不要提交到 Git。
+node bin/agentrelay.js relay token
+$env:AGENTRELAY_TOKEN = '<上一步生成的 token>'
+node bin/agentrelay.js relay hub --port 9330
+```
+
+Hub 默认仅监听 `127.0.0.1`。客户端配置 `AGENTRELAY_URL`，默认
+`http://127.0.0.1:9330`；token 从环境读取，不需要出现在命令参数中。
+Unix shell 使用 `export AGENTRELAY_TOKEN='...'`。
+
+如果 Hub 在可 SSH 登录的跳板机上，每台内网机器建立本地转发：
+
+```sh
+ssh -NT -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
+  -L 127.0.0.1:9330:127.0.0.1:9330 user@jump-host
+```
+
+如果 Hub 本身在内网 A，A 先把 Hub 反向映射到跳板机：
+
+```sh
+# A：跳板机 19330 -> A 的 9330
+ssh -NT -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
+  -R 127.0.0.1:19330:127.0.0.1:9330 user@jump-host
+# B/C：本机 9330 -> 跳板机 19330 -> A
+ssh -NT -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
+  -L 127.0.0.1:9330:127.0.0.1:19330 user@jump-host
+```
+
+这些是长运行连接，请用系统服务或自己的 SSH supervisor 保活。Node 会在网络
+恢复后继续轮询，但不会替你配置 SSH 认证或重启 SSH。无需启用 `GatewayPorts`，
+不要把转发监听改成 `0.0.0.0`。
+
+### 2. 托管需要接收消息的真实终端
+
+```sh
+node bin/agentrelay.js terminal --name coder -- codex
+node bin/agentrelay.js terminal --name reviewer -- claude
+node bin/agentrelay.js terminal --name builder -- opencode
+```
+
+`--` 后是本机可执行程序及参数，不是远端下发的 shell 命令。Windows 的 npm
+启动器如果只有 `.cmd`，显式启动本机 shell，例如：
+
+```powershell
+node bin/agentrelay.js terminal --name reviewer -- cmd.exe /d /s /c claude
+```
+
+包装器使用 `node-pty`（Windows ConPTY / Unix PTY），原样转发终端显示、键盘、
+窗口大小。远端消息通过真实 bracketed paste 输入，`submit` 再单独发送 Enter，
+`draft` 仅填入输入框。消息中的控制字符会被拒绝；目标必须启用 bracketed paste，
+否则拒绝注入。不能把任意已经打开的非托管终端自动接管。
+
+**输入控制默认锁定：**
+
+- 先在真实 TUI 中确认焦点是空的对话输入框，按 `Ctrl-]` 后按 `c` 确认。
+- `Ctrl-]` 后按 `a`：允许下一条远端消息。
+- `Ctrl-]` 后按大写 `A`：明确授权连续远端消息，适合 Agent 间往返通信。
+- `Ctrl-]` 后按 `l`：锁定。普通本地键盘输入会撤销远端授权。
+- `draft` 后锁定，避免后续消息覆盖或误提交草稿；清空/处理草稿后重新确认并授权。
+
+这里没有通用的“模型忙碌/输入框焦点识别”：连续模式中消息可能被不同 TUI 当作
+steer 或排队输入。授权前确认 TUI 状态，不要在密码框、权限确认框或 shell 上授权。
+包装器证明的是输入已写入 PTY，不是模型已接受或完成请求。
+
+### 3. 配置本机目标并启动 Node
+
+包装器在 stderr 打印 descriptor 路径，默认
+`~/.agentrelay/terminals/coder.json`。把该 JSON 对象放到本机 `targets.json`
+的目标名下；例如：
+
+```json
+{
+  "coder": {
+    "type": "terminal",
+    "socket": "<descriptor 中的 socket>",
+    "secret": "<descriptor 中的 secret>"
+  },
+  "desktop": {
+    "type": "zcode",
+    "sessionId": "<本机 ZCode 会话 ID>"
+  }
+}
+```
+
+descriptor 含本机注入凭证，勿公开。终端重启后重新复制 descriptor，并重启
+Node 加载配置。每台机器使用不同的 Node ID 和自己的数据目录：
+异常退出可能留下 descriptor：必须先确认旧包装器已经停止，才能删除该文件并重新
+启动；工具不会覆盖可能属于活跃终端的凭证。
+
+```powershell
+$env:AGENTRELAY_TOKEN = '<同一个 token>'
+node bin/agentrelay.js relay node --id laptop-b --targets .\targets.json
+```
+
+ZCode 桌面目标仅支持 `submit`，要求 Windows 和已开启的本机 CDP 调试端口。
+分布式路径采用单次、严格桌面投递；找不到唯一目标或安全输入框时拒绝，
+不降级为后台运行。CDP 属于高权限接口，只能绑定本机或受保护的隧道。
+要求当前 ZCode v4 的精确 session-id DOM 标记；旧版或变更后的 UI 将拒绝投递。
+桌面目标可配置 `cdpPort`（默认 9222）和 `cdpTargetId`；多个 CDP 页面存在时必须
+明确指定页面 ID（从本机 `http://127.0.0.1:9222/json` 查看）。
+
+### 4. 发消息、查状态、让 Agent 回信
+
+```sh
+node bin/agentrelay.js relay nodes
+node bin/agentrelay.js relay send laptop-b coder "请检查接口，并把结论发回 laptop-a 的 planner"
+node bin/agentrelay.js relay send laptop-b coder "这是一条待确认草稿" --mode draft
+node bin/agentrelay.js relay status <返回的消息ID>
+```
+
+`--id <UUID>` 提供幂等提交：同 ID、同内容返回原消息，不重复排队；
+同 ID、不同内容报冲突。发送端超时后应使用原 ID 重试，不能随意生成新 ID。
+
+在现有 stdio MCP 配置的进程环境中设置 `AGENTRELAY_URL` / `AGENTRELAY_TOKEN`，
+即可使用新增的 `relay_nodes`、`relay_send`、`relay_status`。
+`relay_send` 参数为 `{to, target, text, mode?, id?}`。双方 Agent 均配置该 MCP，
+就能互相发送；回信是显式发送到对方机器/目标的另一条消息，不自动抓取终端输出、
+不把工具日志误当最终答案，也不会自动触发无限回信。
+
+**收发语义与安全边界：**
+
+- `queued`：Hub 已持久保存，离线目标恢复后可接收。
+- `delivering`：已领取，正在尝试 UI 输入。
+- `delivered`：输入投递成功；不代表模型完成。详情区分 submitted / drafted。
+- `failed`：投递失败，检查错误和本机授权状态。
+- `uncertain`：崩溃、超时等导致无法证明是否已输入；先看目标界面，不能盲目重发。
+- Hub 队列、本机收据持久化；不能把外部 UI 操作与数据库事务原子提交，因此不承诺
+  exactly-once。对于不确定的输入，宁可要求人工核实，也不自动重复提交。
+- token 是整个中继的共享信任边界，不是多租户隔离。持有 token 的客户端可向所有
+  白名单目标发消息和读取中继消息；只授权可信机器。敏感提示词会落盘。
+  token 同时授权内部节点领取/回执接口，持有者可以冒充节点，不能给不可信租户。
+  必须一起保留 Hub 数据库和 Node 收据数据库；仅恢复其中之一无法保证历史对账。
+- 远端不能指定任意进程、shell、socket；目的地只能是 Node 本地配置的目标名称。
+- 目前不提供通用桌面注入：严格桌面适配为 ZCode；其他桌面程序需要对应适配器。
+
+运行回归验证：`npm test`。原有本机会话管理命令保持原语义。
+
+验证范围：Windows 上验证了真实 PTY 的中文多行提交、输入锁、草稿保护，以及实际
+Codex TUI 的可见草稿注入；Hub 重启恢复、幂等提交、鉴权和崩溃不重放有回归覆盖。
+严格桌面 CDP 在隔离浏览器页面验证提交/草稿拒绝，并只读检查了本机 ZCode DOM；
+没有向已有 ZCode 会话发送测试消息。另已在 Linux 上通过回归测试，并通过真实 SSH
+反向隧道验证 Windows → Linux OpenCode 1.18.31 的可见提交与模型回复，以及远端
+OpenCode 经 MCP → Windows OpenCode 的可见草稿回信。macOS 和 Claude TUI 尚未实测。
 
 ## Commands
 

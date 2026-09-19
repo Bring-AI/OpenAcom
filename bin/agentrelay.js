@@ -15,6 +15,8 @@ Usage:
   agentrelay paths
   agentrelay oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
+  agentrelay relay --help   durable multi-machine messaging over SSH-forwardable HTTP
+  agentrelay terminal --name TARGET -- PROGRAM [ARGS...]   visible, controlled TUI input
 
 Notes:
   - sessionId is matched across all agents unless --agent pins one.
@@ -199,6 +201,11 @@ async function cmdOcServe(flags) {
 
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
+  if (cmd === 'relay') return require('../lib/distributed-cli').run(rest);
+  if (cmd === 'terminal') {
+    process.exitCode = await require('../lib/distributed-cli').terminal(rest);
+    return;
+  }
   const flags = parseArgs(rest);
   if (flags.help) { console.log(HELP); return; }
   switch (cmd) {

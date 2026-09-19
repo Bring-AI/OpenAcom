@@ -24,6 +24,10 @@
   ],
   "private": false,
   "scripts": {
-    "update": "git pull && npm install -g ."
+    "update": "git pull && npm install -g .",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0"
   }
 }
