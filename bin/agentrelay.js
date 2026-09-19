@@ -14,6 +14,7 @@ Usage:
   agentrelay send  <sessionId> <message...> [--agent A] [--timeout ms] [--json] [--desktop] [--wait] [--no-wait]  resume a session
   agentrelay paths
   agentrelay oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)
+  agentrelay oc-attach [dir] [--port N]   open a live TUI on the project's shared server (starts it if needed)
   agentrelay mcp   Run as a stdio MCP server exposing the same operations as tools
   agentrelay relay --help   durable multi-machine messaging over SSH-forwardable HTTP
   agentrelay terminal --name TARGET -- PROGRAM [ARGS...]   visible, controlled TUI input
@@ -199,6 +200,27 @@ async function cmdOcServe(flags) {
   } catch (e) { die(e.message); }
 }
 
+// Open a live TUI on the project's shared server, in this terminal. The
+// server is started first when needed, so this is the only command a viewer
+// ever runs - no port lookup, no URL paste.
+async function cmdOcAttach(flags) {
+  const oc = require('../lib/adapters/opencode');
+  const dir = path.resolve(flags._[0] || process.cwd());
+  const port = flags.port || oc.serverPortFor(dir);
+  const base = `http://127.0.0.1:${port}`;
+  if (!(await oc.probeServer(base, null, 1500))) {
+    console.error(`shared server not up for ${dir}; starting...`);
+    try { await oc.startServer(dir, { port }); }
+    catch (e) { die(e.message); }
+  }
+  const exe = oc.cliPath();
+  if (!exe || exe === 'opencode') die('opencode executable not found');
+  const { spawnSync } = require('child_process');
+  const r = spawnSync(exe, ['attach', base], { cwd: dir, stdio: 'inherit' });
+  if (r.error) die(`failed to launch opencode attach: ${r.error.message}`);
+  process.exit(r.status ?? 0);
+}
+
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   if (cmd === 'relay') return require('../lib/distributed-cli').run(rest);
@@ -214,6 +236,7 @@ async function main() {
     case 'send': return cmdSend(flags);
     case 'paths': return cmdPaths();
     case 'oc-serve': return cmdOcServe(flags);
+    case 'oc-attach': return cmdOcAttach(flags);
     case 'mcp': return require('../lib/mcp').run();
     case 'mcp-http': return require('../lib/mcp-http').runHttp(parseInt(rest[0], 10) || 9321);
     default: console.log(HELP); process.exit(cmd ? 1 : 0);

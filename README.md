@@ -172,7 +172,18 @@ node bin/agentrelay.js relay status <返回的消息ID>
 同 ID、不同内容报冲突。发送端超时后应使用原 ID 重试，不能随意生成新 ID。
 
 在现有 stdio MCP 配置的进程环境中设置 `AGENTRELAY_URL` / `AGENTRELAY_TOKEN`，
-即可使用新增的 `relay_nodes`、`relay_send`、`relay_status`。
+即可使用新增的 `relay_nodes`、`relay_send`、`relay_status`。例如 Claude Desktop：
+
+```json
+{ "mcpServers": { "agentrelay": {
+    "command": "node",
+    "args": ["C:\\path\\to\\agent-relay\\bin\\agentrelay.js", "mcp"],
+    "env": { "AGENTRELAY_URL": "http://127.0.0.1:9330", "AGENTRELAY_TOKEN": "<同一个 token>" }
+} } }
+```
+
+不配置这两个环境变量也不影响本地的 `send_message` / `list_sessions` /
+`read_session`——那四个工具从不经过 Hub；只有 `relay_*` 三件套需要。
 `relay_send` 参数为 `{to, target, text, mode?, id?}`。双方 Agent 均配置该 MCP，
 就能互相发送；回信是显式发送到对方机器/目标的另一条消息，不自动抓取终端输出、
 不把工具日志误当最终答案，也不会自动触发无限回信。
@@ -210,6 +221,8 @@ OpenCode 经 MCP → Windows OpenCode 的可见草稿回信。macOS 和 Claude T
 | `agentrelay read <sessionId> [--agent A] [--last N] [--json]` | Last turns of any session, system noise filtered |
 | `agentrelay send <sessionId> <message...> [--agent A] [--timeout ms] [--json]` | Deliver a real user turn and print the reply (opencode targets steer the exact session live — never forked — and stream the turn in the CLI; blocking by default, `--no-wait` detaches) |
 | `agentrelay paths` | Show detected storage locations and CLI paths |
+| `agentrelay oc-serve [dir] [--port N]` | Pre-warm a project's shared OpenCode server (normally unnecessary because `send` starts it automatically) |
+| `agentrelay oc-attach [dir] [--port N]` | Open a live OpenCode TUI on the project's shared server, starting the server when needed |
 | `agentrelay mcp` | Run as a stdio MCP server exposing the same operations as tools |
 
 Session ids are matched across all four agents automatically; pass `--agent`
@@ -217,9 +230,12 @@ when an id could be ambiguous or to skip the full scan.
 
 ## Use as an MCP server
 
-`agentrelay mcp` runs a stdio MCP server exposing four tools — `list_sessions`,
+`agentrelay mcp` runs a stdio MCP server exposing `list_sessions`,
 `read_session`, `send_message`, `get_paths` — so any MCP client can drive your
-other agents. Wire it in (adjust the path to your install):
+other agents. Three distributed-messaging tools (`relay_nodes`, `relay_send`,
+`relay_status`) light up as well when the process has `AGENTRELAY_URL` +
+`AGENTRELAY_TOKEN` set (see the 分布式通信 section). Wire it in (adjust the path
+to your install):
 
 Claude Code:
 
@@ -305,7 +321,7 @@ $ agentrelay send ses_f4fa6e7b... "Continue with the next step"
 opencode server started for F:/Saba - live TUI: opencode attach http://127.0.0.1:44231
 Done, next step implemented.
 [session: ses_f4fa6e7b...]
-$ opencode attach http://127.0.0.1:44231   # once: this TUI is live from now on
+$ agentrelay oc-attach F:/Saba             # opens the live TUI; no URL lookup or paste
 ```
 
 - The attach hint prints exactly once, when the send booted the server.
@@ -323,6 +339,8 @@ $ opencode attach http://127.0.0.1:44231   # once: this TUI is live from now on
 - `agentrelay oc-serve [dir] [--port N]` only pre-warms the server (and
   prints the attach line) without sending. Same behavior flows through MCP
   `send_message` automatically — one interface, CLI and MCP alike.
+- `agentrelay oc-attach [dir] [--port N]` is the one-step viewer command: it
+  starts the same server when needed and attaches a TUI in the current terminal.
 
 ### Fresh sessions — recommended for agent-to-agent traffic (zcode)
 
@@ -394,7 +412,7 @@ delivery routes:
   processes stay unclaimed; there is no TCP/pipe control surface; injecting a
   row into the internal session_input queue is ignored). Messages still land and
   the agent still processes them - only the open window does not repaint.
-- **CDP route (default when available)**: start the app with
+- **CDP route (the default; the only visible route)**: start the app with
   `--remote-debugging-port=9222` and AgentRelay drives the renderer directly -
   locate the session row in the sidebar, focus the composer, insert the message
   as trusted input, press Enter. The turn runs *inside* the app: live refresh,
@@ -402,6 +420,8 @@ delivery routes:
   arriving mid-turn steers the running agent instead of queueing. Works while
   the window is backgrounded or minimized (renderer-level events, no OS focus
   steal). This is the only way to deliver into a conversation the user has open.
+  Headless is now opt-in only (`--no-desktop` / `desktop: false`); a CDP failure
+  surfaces as an error instead of silently degrading.
 
 ### Remote (SSH) Claude sessions - reading a mirror, writing to the live brain
 
@@ -420,22 +440,29 @@ Claude desktop in real time and the chain stays native.
 ### Remote agents driving local sessions
 
 stdio MCP servers can only be spawned by local clients, so for agents on other
-machines AgentRelay also speaks streamable HTTP on `127.0.0.1:9321`, paired with
-an SSH reverse tunnel (`tools/relay-remote-up.ps1`). The remote client registers
+machines AgentRelay also speaks streamable HTTP, paired with an SSH reverse
+tunnel (`tools/relay-remote-up.ps1`). The script listens on `127.0.0.1:9322`
+locally (9321 is commonly taken by other desktop apps) and maps the remote's
+unchanged `9321` onto it, so the remote client registers
 `http://127.0.0.1:9321/mcp` and gets the same tools operating on your local
 sessions; traffic never leaves the SSH tunnel.
 
-### Desktop mode (zcode, Windows)
+### Desktop mode (zcode, Windows) — the only route, by design
 
-By default a zcode `send` runs headless, which writes to the session database
-behind the desktop app's back — the app's window will not live-refresh (its UI
-keeps its own in-memory state and never re-reads the DB). `--desktop` (CLI) or
-`desktop: true` (MCP) takes a different route: it locates the session in the
-desktop app's sidebar and delivers the message through the app's real composer
-over CDP (renderer-level trusted input events — no focus stealing). The turn
-runs **inside the desktop app**, so its window updates live, the message chain
-stays native, and if the session is mid-turn the message **steers** it
-(requires the desktop setting `zcodeInteractionBehavior: "guide"`).
+A zcode `send` delivers through the **desktop UI over CDP**: it locates the
+session in the desktop app's sidebar, focuses the composer, and types the
+message in as renderer-level trusted input (no focus stealing). The turn runs
+**inside the desktop app**, so its window updates live, the message chain stays
+native, and if the session is mid-turn the message **steers** it (requires the
+desktop setting `zcodeInteractionBehavior: "guide"`).
+
+There is **no silent fallback**: if CDP delivery fails (app not running with
+the debug port, session row not found, composer not reachable), the send
+**errors out** — earlier versions quietly degraded to a headless run that could
+use a different model than the session UI, or drop the message entirely when
+headless was broken. The caller sees the real failure and can retry.
+`--no-desktop` (CLI) or `desktop: false` (MCP) is the explicit headless escape
+hatch for when you want that behavior on purpose.
 
 One-time setup:
 
@@ -504,6 +531,16 @@ handling applies.
 
 - `send` spends tokens on the target agent and permanently appends to that session's history.
 - Sending to a session that is currently busy in its own UI may preempt the active turn.
+- **Codex single-writer lock**: a codex session that is currently open in a Codex
+  TUI/desktop holds its thread lock, and headless injection into it is refused by
+  codex itself (`thread-store conflict`). Deliver in that TUI directly, or close
+  the conversation first; `read` is unaffected. Sessions nobody has open send fine.
+- **ZCode headless config is fragile across app updates**: headless runs need the
+  provider config the bundled CLI resolves relative to its own directory — the
+  desktop app has moved it between releases (e.g. `resources\glm\provider\`
+  vs `resources\config\provider\`). If headless fails with "无法定位 CLI ZCode
+  Built-in Provider Config", copy `zcode-builtin.json` to the path named in the
+  error. Visible CDP delivery does not depend on this file.
 - Session storage layouts are the agents' local, undocumented formats and may change between versions.
 - Prompt payloads always travel via stdin or a directly-spawned process — never through a shell — so arbitrary quotes/newlines in messages are safe.
 
@@ -523,10 +560,14 @@ handling applies.
   命令。平时不需要手动跑：`send` 发往 opencode 会话时会自动起服、自动复用，
   首次起服时 CLI 只提示一次 attach 行；起不了服则自动回退 `opencode run`
   路径，投递永远可用（`AGENTRELAY_OPENCODE_NOSERVE=1` 可彻底关掉自动起服）
+- `agentrelay oc-attach [目录] [--port N]` — 一步打开该项目共享 server 的实时
+  TUI；server 未启动时会自动启动，不需要查端口或复制 URL
 - `agentrelay paths` — 显示探测到的存储路径与 CLI
-- `agentrelay mcp` — 以 stdio MCP server 运行，把同样能力暴露为 4 个工具
-  （`list_sessions` / `read_session` / `send_message` / `get_paths`），可接入
-  Claude Code、Claude Desktop、Codex、ZCode 等 MCP 客户端，配置示例见上方英文段
+- `agentrelay mcp` — 以 stdio MCP server 运行：基础 4 工具（`list_sessions` /
+  `read_session` / `send_message` / `get_paths`）接入 Claude Code、Claude Desktop、
+  Codex、ZCode 等 MCP 客户端，配置示例见上方英文段；当进程环境配置了
+  `AGENTRELAY_URL` + `AGENTRELAY_TOKEN` 时，还会启用分布式三件套
+  `relay_nodes` / `relay_send` / `relay_status`（见「分布式通信」章节）
 - Claude 的 SSH 远程会话：`list`/`read` 以 `ssh:` 前缀标识（子代理转录不会列为 session）；
   `send` 支持远程会话——自动从 `~/.claude.json` 解析主机，在远程主机上找到活运行进程
   （`--resume=<id>`），以 stream-json 用户回合注入其 stdin，回复实时流回桌面应用。
@@ -541,6 +582,12 @@ zcode 自动探测桌面版自带的 `zcode.cjs`（可用 `AGENTRELAY_ZCODE_CLI`
 
 **注意**：`send` 会消耗目标 agent 的模型额度并永久写入其 session 历史；给正在忙碌的
 session 发送可能抢占当前轮次；session 存储格式是四家 agent 的本地私有格式，随版本可能变化。
+**codex 单写入者锁**：正开在 Codex TUI/桌面里的会话持有线程锁，codex 自身会拒绝无头
+注入（`thread-store conflict`）——请在那个 TUI 里直接发言，或先关闭该会话；`read` 不受影响。
+**zcode 无头配置随桌面更新易失效**：无头运行依赖内置 CLI 按自身目录解析的 provider
+配置文件，桌面版更新曾移动过该文件位置（`resources\glm\provider\` ↔
+`resources\config\provider\`）。无头报「无法定位 CLI ZCode Built-in Provider Config」
+时，把 `zcode-builtin.json` 复制到报错指出的路径即可；CDP 可见投递不依赖此文件。
 
 **fresh 会话模式（默认的 agent 间通信）**：`agentrelay send <消息>`（不带 sessionId
 即走此模式；`--fresh` 为显式形式）在一个
@@ -563,11 +610,14 @@ ZCode 桌面把全部对话存在本地 SQLite（`~/.zcode/cli/db/db.sqlite`，`
   内存里的状态，数据库只是它的持久化日志而非共享总线。外部插入永远不会被重读（实测：
   外部写的队列表行无人认领；无 TCP/管道控制面；直接插 `session_input` 也被无视）。
   消息其实已送达、agent 也处理了，只是开着的窗口不重绘。
-- **CDP 路线（可用时默认）**：桌面以 `--remote-debugging-port=9222` 启动后，AgentRelay
-  直接驱动渲染层——侧边栏定位会话行、聚焦输入框、以受信任输入插入消息、回车。回合在
-  应用**内部**执行：实时刷新、消息链原生；配合 `zcodeInteractionBehavior: "guide"`，
-  回合进行中到达的消息直接**抢占引导**运行中的 agent 而非排队。窗口最小化/后台照常
-  （渲染层事件，不抢 OS 焦点）。这是向"用户正开着的会话"投递的唯一途径。
+- **CDP 路线（默认路线，也是唯一可见路线）**：桌面以 `--remote-debugging-port=9222`
+  启动后，AgentRelay 直接驱动渲染层——侧边栏定位会话行、聚焦输入框、以受信任输入
+  插入消息、回车。回合在应用**内部**执行：实时刷新、消息链原生；配合
+  `zcodeInteractionBehavior: "guide"`，回合进行中到达的消息直接**抢占引导**运行中的
+  agent 而非排队。窗口最小化/后台照常（渲染层事件，不抢 OS 焦点）。这是向"用户正
+  开着的会话"投递的唯一途径。CDP 投递失败会**直接报错**，不再静默降级为无头
+  （旧行为可能用不同模型跑、甚至在无头损坏时整条消息丢失）；`--no-desktop` /
+  `desktop: false` 是显式的无头逃生通道。
 
 ### 远程（SSH）Claude 会话——本地是镜像，大脑在服务器
 
@@ -579,16 +629,15 @@ SSH 工作区的 Claude 会话在本地只有转录镜像；活进程
 
 ### 远程 agent 操控本地 session
 
-stdio MCP 只能被同机客户端拉起，故另提供 HTTP 传输（127.0.0.1:9321）+ SSH 反向隧道
-（`tools
-elay-remote-up.ps1`）。远端注册 `http://127.0.0.1:9321/mcp` 即获得操作本地
-session 的同一组工具，流量不出 SSH 隧道。
+stdio MCP 只能被同机客户端拉起，故另提供 HTTP 传输 + SSH 反向隧道
+（`tools/relay-remote-up.ps1`）。脚本默认监听本地 `127.0.0.1:9322`（9321 常被
+其他桌面应用占用），并把远程机器上不变的 `9321` 映射到本地 `9322`；远端注册
+`http://127.0.0.1:9321/mcp` 即获得操作本地 session 的同一组工具，流量不出 SSH 隧道。
 
 **远程 agent 接入（HTTP 传输）**：stdio MCP 只能被同机客户端拉起。跑在服务器上的
 agent（如 SSH 里的 Claude Code）改用 HTTP 传输：Windows 上运行
-`tools
-elay-remote-up.ps1`（启动本地 127.0.0.1:9321 的 MCP + SSH 反向隧道
-`服务器:9321 → 本地:9321`），再在服务器的 `~/.claude.json` 注册
+`tools/relay-remote-up.ps1`（启动本地 `127.0.0.1:9322` 的 MCP + SSH 反向隧道
+`服务器:9321 → 本地:9322`），再在服务器的 `~/.claude.json` 注册
 `{"mcpServers":{"agentrelay":{"type":"http","url":"http://127.0.0.1:9321/mcp"}}}`。
 远程 agent 即获得操作**本地** session 的同一组工具；流量全程走 SSH 隧道，两端只绑
 localhost。重启电脑后需重跑 relay-remote-up.ps1。
