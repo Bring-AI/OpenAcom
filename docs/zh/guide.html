@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>指南 · OpenAcom</title>
+<meta name="description" content="指南 - 开源、分布式、安全的 agent 通信。">
+<style>
+:root{--bg:#0d1420;--panel:#16202e;--panel2:#101a28;--line:#22304a;--fg:#b9c3d1;--head:#e8eef7;--accent:#3b82f6;--muted:#7d8ba0;--code:#9fc0e8;--warn:#d29922}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,"Segoe UI",Roboto,"Helvetica Neue","Microsoft YaHei",sans-serif}
+a{color:var(--accent)}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:12.5px/1.5 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--code);overflow-wrap:anywhere}
+pre.code{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;max-width:100%;font:12.5px/1.6 ui-monospace,Consolas,"Cascadia Mono",monospace;color:#c6d4e6}
+pre.code code{background:none;border:none;padding:0;color:inherit;overflow-wrap:normal;white-space:pre}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:8px;top:8px;background:var(--panel);padding:6px 10px;border-radius:6px;z-index:99}
+header.topbar{position:sticky;top:0;z-index:10;background:rgba(13,20,32,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;text-decoration:none;line-height:1.1;padding:6px 0}
+.brand .wordmark{color:#fff;font-weight:800;font-size:19px;letter-spacing:.2px}
+.brand .rule{width:34px;height:3px;background:var(--accent);border-radius:2px;margin-top:3px}
+.brand .brandtag{color:var(--muted);font-size:10px;letter-spacing:.03em;margin-top:3px;max-width:34ch}
+nav.mainnav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+nav.mainnav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:6px 9px;border-radius:6px}
+nav.mainnav a:hover{color:var(--head);background:var(--panel)}
+nav.mainnav a.on{color:var(--head);background:var(--panel);box-shadow:inset 0 -2px 0 var(--accent)}
+a.langswitch{color:var(--accent);text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+a.langswitch:hover{border-color:var(--accent)}
+.hero{padding:44px 0 8px}
+.hero .wordmark{color:#fff;font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.5px;margin:0}
+.hero .rule{width:76px;height:5px;background:var(--accent);border-radius:3px;margin:10px 0 18px}
+.hero .tagline{color:#cfd8e6;font-size:clamp(15px,2.4vw,19px);margin:0 0 10px;max-width:46ch}
+.hero .lede{max-width:70ch;margin:0 0 18px}
+.hero .meta{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin:22px 0 8px}
+.cards a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg)}
+.cards a:hover{border-color:var(--accent)}
+.cards a b{display:block;color:var(--head);font-size:14.5px;margin-bottom:4px}
+.cards a span{font-size:12.5px;color:var(--muted);display:block}
+.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:30px;padding:26px 0 40px}
+details.tocbox{align-self:start;position:sticky;top:66px}
+details.tocbox summary{cursor:pointer;color:var(--muted);font-size:13px;padding:6px 0}
+.toc-title{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc li a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-left:2px solid transparent;margin-left:-1px}
+.toc li a:hover{color:var(--head)}
+.toc li.l3 a{padding-left:22px;font-size:12.5px}
+article{min-width:0}
+article h1{color:var(--head);font-size:26px;margin:0 0 6px}
+article h1 .rule{display:block;width:52px;height:4px;background:var(--accent);border-radius:2px;margin-top:8px}
+article h2{color:var(--head);font-size:20px;margin:38px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+article h3{color:var(--head);font-size:16px;margin:26px 0 8px}
+article h4{color:var(--head);font-size:14px;margin:20px 0 6px}
+article p{margin:10px 0;max-width:82ch}
+article ul,article ol{max-width:82ch;padding-left:22px}
+article li{margin:4px 0}
+blockquote{border-left:3px solid var(--accent);background:var(--panel);margin:12px 0;padding:8px 14px;border-radius:0 8px 8px 0}
+.tablewrap{overflow-x:auto;max-width:100%;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel);color:var(--head);font-weight:600;white-space:nowrap}
+td code{white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.card h3{margin:0 0 6px}
+.card .desc{margin:6px 0 10px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:1px 9px;color:var(--muted);vertical-align:middle;margin-left:8px}
+.badge.req{color:var(--accent);border-color:var(--accent)}
+.badge.todo{color:var(--warn);border-color:var(--warn)}
+.src{color:var(--muted);font-size:11.5px;margin:8px 0 0}
+.note{color:var(--muted);font-size:13px;border-left:3px solid var(--line);padding-left:12px;margin:10px 0}
+input.filterbox{width:100%;max-width:340px;background:var(--panel2);border:1px solid var(--line);color:var(--head);border-radius:8px;padding:7px 10px;font:13.5px inherit;font-family:inherit;margin:8px 0 4px}
+input.filterbox:focus{outline:1px solid var(--accent)}
+[hidden]{display:none!important}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:18px 0 30px;color:var(--muted);font-size:12.5px}
+footer p{margin:4px 0;max-width:90ch}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;gap:10px}
+  .brand .brandtag{display:none}
+  details.tocbox{position:static;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+  .topbar .wrap{gap:10px}
+  nav.mainnav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="wrap"><a class="brand" href="index.html"><span class="wordmark">OpenAcom</span><span class="rule"></span><span class="brandtag">开源、分布式、安全的 agent 通信。</span></a><nav class="mainnav" aria-label="site"><a href="index.html">首页</a><a href="install.html">安装</a><a href="cli.html">CLI</a><a href="mcp.html">MCP 工具</a><a href="sdk.html">SDK</a><a href="relay.html">Relay 与安全</a><a class="on" href="#">指南</a></nav><a class="langswitch" href="../guide.html">EN</a></div></header>
+<div class="wrap"><div class="layout"><details class="tocbox" open><summary>本页目录</summary><nav class="toc"><ul><li class="l2"><a href="#实现原理重点">实现原理（重点）</a></li><li class="l3"><a href="#zcode-没有官方-session-api发送是怎么做出来的">ZCode 没有官方 session API，发送是怎么做出来的</a></li><li class="l3"><a href="#远程sshclaude-会话本地是镜像大脑在服务器">远程（SSH）Claude 会话——本地是镜像，大脑在服务器</a></li><li class="l3"><a href="#远程-agent-操控本地-session">远程 agent 操控本地 session</a></li></ul></nav></details><main id="main"><article><h1>指南<span class="rule"></span></h1><h2 id="实现原理重点">实现原理（重点）</h2><h3 id="zcode-没有官方-session-api发送是怎么做出来的">ZCode 没有官方 session API，发送是怎么做出来的</h3>
+<p>ZCode 桌面把全部对话存在本地 SQLite（<code>~/.zcode/cli/db/db.sqlite</code>，<code>message</code>+<code>part</code> 表）。读取直接查库；发送逆出了三条路：</p>
+<ul><li><strong>无头 resume</strong>：桌面自带的 CLI（<code>zcode.cjs --resume &lt;id&gt; --prompt</code>）在自己的进程里 物化会话并执行回合。需要在 <code>~/.zcode/cli/config.json</code> 配模型 （<code>&quot;model&quot;: &quot;provider/model-id&quot;</code>）；桌面的 <code>~/.zcode/v2/config.json</code> 对无头无效。</li><li><strong>为什么外部写入后桌面窗口不刷新</strong>：桌面是&quot;单写入者&quot;架构——界面渲染的是 app-server 内存里的状态，数据库只是它的持久化日志而非共享总线。外部插入永远不会被重读（实测： 外部写的队列表行无人认领；无 TCP/管道控制面；直接插 <code>session_input</code> 也被无视）。 消息其实已送达、agent 也处理了，只是开着的窗口不重绘。</li><li><strong>CDP 路线（默认路线，也是唯一可见路线）</strong>：桌面以 <code>--remote-debugging-port=9222</code> 启动后，OpenAcom 直接驱动渲染层——侧边栏定位会话行、聚焦输入框、以受信任输入 插入消息、回车。回合在应用<strong>内部</strong>执行：实时刷新、消息链原生；配合 <code>zcodeInteractionBehavior: &quot;guide&quot;</code>，回合进行中到达的消息直接<strong>抢占引导</strong>运行中的 agent 而非排队。窗口最小化/后台照常（渲染层事件，不抢 OS 焦点）。这是向&quot;用户正 开着的会话&quot;投递的唯一途径。CDP 投递失败会<strong>直接报错</strong>，不再静默降级为无头 （旧行为可能用不同模型跑、甚至在无头损坏时整条消息丢失）；<code>--no-desktop</code> / <code>desktop: false</code> 是显式的无头逃生通道。这条可见路线前面有两道闸门：授权闸门（它会真的 按回车，需 <code>OPENACOM_DESKTOP_CONSENT=1</code> 或该条消息 <code>consent:true</code>）和端口身份核验 （端口必须&quot;看起来像 ZCode&quot;才肯注入），见第 5、9 节；被 <code>CONSENT_REQUIRED</code> 拒掉时， 无头路径同样是可选的逃生通道。</li></ul>
+<h3 id="远程sshclaude-会话本地是镜像大脑在服务器">远程（SSH）Claude 会话——本地是镜像，大脑在服务器</h3>
+<p>SSH 工作区的 Claude 会话在本地只有转录镜像；活进程 （<code>ccd-cli --resume=&lt;id&gt; --input-format stream-json</code>）跑在服务器上、从 stdin 消费用户 回合。OpenAcom：① 从 <code>~/.claude.json</code> 的 <code>ssh:&lt;host&gt;:&lt;cwd&gt;</code> 项目键解析主机； ② SSH 上去按 <code>--resume=&lt;id&gt;</code> 找活进程；③ 往 <code>/proc/&lt;pid&gt;/fd/0</code> 写一行 stream-json 用户回合。回合在活进程内执行，回复实时流回 Claude 桌面，链原生。</p>
+<h3 id="远程-agent-操控本地-session">远程 agent 操控本地 session</h3>
+<p>stdio MCP 只能被同机客户端拉起，故另提供 HTTP 传输 + SSH 反向隧道 （<code>tools/relay-remote-up.ps1</code>）。脚本默认监听本地 <code>127.0.0.1:9322</code>（9321 常被 其他桌面应用占用），并把远程机器上不变的 <code>9321</code> 映射到本地 <code>9322</code>；远端注册 <code>http://127.0.0.1:9321/mcp</code> 即获得操作本地 session 的同一组工具，流量不出 SSH 隧道。</p>
+<p><strong>远程 agent 接入（HTTP 传输）</strong>：stdio MCP 只能被同机客户端拉起。跑在服务器上的 agent（如 SSH 里的 Claude Code）改用 HTTP 传输：Windows 上运行 <code>tools/relay-remote-up.ps1</code>（启动本地 <code>127.0.0.1:9322</code> 的 MCP + SSH 反向隧道 <code>服务器:9321 → 本地:9322</code>），再在服务器的 <code>~/.claude.json</code> 注册 <code>{&quot;mcpServers&quot;:{&quot;openacom&quot;:{&quot;type&quot;:&quot;http&quot;,&quot;url&quot;:&quot;http://127.0.0.1:9321/mcp&quot;}}}</code>。 远程 agent 即获得操作<strong>本地</strong> session 的同一组工具；流量全程走 SSH 隧道，两端只绑 localhost。重启电脑后需重跑 relay-remote-up.ps1。</p>
+<p><strong>desktop 模式（zcode / Windows）</strong>：CLI 的 zcode <code>send</code> 默认走桌面可见投递：CDP 驱动 真实输入框（需桌面以 <code>--remote-debugging-port=9222</code> 启动；<code>--desktop</code> 为显式形式；MCP 侧的对应 入口是 <code>send_desktop</code>，或 <code>send_message</code> 的 <code>inject:true</code> + <code>desktop:true</code>）——在侧边栏定位会话 → 向真实输入框注入受信任输入事件 → 回车发送。回合由桌面应用自己执行——<strong>窗口实时刷新、消息链 原生</strong>；若该会话正在跑回合，消息会以 guide 模式抢占（运行中的 agent 立即看到；需桌面设置 <code>zcodeInteractionBehavior: &quot;guide&quot;</code>）。<code>--no-desktop</code>（MCP 侧是 <code>inject:true</code> + <code>desktop:false</code>）才是显式的无头路径：直接写数据库，桌面窗口不会实时刷新；而 MCP <code>send_message</code> 的缺省路径压根不进这条链路，它只往目标收件箱落一行。</p>
+<p>这条传统传输<strong>只有 submit 一种模式</strong>（它没有草稿概念，向它请求 <code>draft</code> 是 <code>INVALID_MODE</code>， 不会被悄悄当成回车），而 submit 会在你正在用的窗口里按回车，所以它被授权闸门挡住：该条消息 <code>--consent true</code>，或发送方进程环境里有 <code>OPENACOM_DESKTOP_CONSENT=1</code>（旧名 <code>AGENTRELAY_DESKTOP_CONSENT=1</code> 同样有效；必须恰好是 <code>1</code>）。MCP 的两个桌面动词 （<code>send_desktop</code>、<code>send_message</code> 的 <code>inject:true</code> + <code>desktop:true</code>）各自带 <code>consent</code> 入参，缺省 不授权时与 CLI 同一条规则。没有授权时是 <code>CONSENT_REQUIRED</code> + <code>uncertain:false</code> ——文本从未进过桌面；CLI 在这种情况下会直接印出两条出路（<code>--desktop --draft</code> 留草稿给人看， 或 <code>--consent true</code> 明确批准回车）。想在桌面里留草稿就必须走严格发送器：<code>--desktop --draft</code>。 <code>targets.json</code> 里 <code>type:&quot;zcode&quot;</code> 的目标缺省又是 <code>draft</code>，别把三者混为一谈；差异见 「分布式通信」第 5 节的表。注入前还要过端口身份核验（同一章第 9 节，含&quot;默认值未经实机 核实、不构成身份认证&quot;的诚实声明）。</p>
+<p>一次性准备：托盘退出 ZCode 后运行 <code>tools\start-zcode-cdp.ps1</code>（以 <code>--remote-debugging-port=9222</code> 重启应用；CDP 是本地控制面，只在可信机器上开启； 也可把该参数加进快捷方式 Target 常开）。代价：仅 Windows、需桌面应用以此方式运行、 按标题前缀匹配会话、拿不到回复文本（回合在应用内异步执行）。</p>
+<p>MIT licensed.</p></article></main></div></div>
+<footer><div class="wrap"><p>OpenAcom 版本 0.16.4 · 由 tools/gen-docs.js 从 README.md 与源码树生成；本页所有 API 面均为抽取，而非手抄。</p><p>单文件静态 HTML：无 CDN、无外部字体、无运行时依赖，可直接以 file:// 打开。</p><p>来源: <code>README.md</code> <code>package.json</code> <code>bin/openacom.js</code> <code>lib/mcp.js</code> <code>lib/index.js</code> <code>lib/sdk.js</code> <code>lib/distributed.js</code> <code>lib/distributed-cli.js</code> <code>lib/desktop-delivery.js</code> <code>lib/groups.js</code> <code>lib/delivery.js</code></p></div></footer>
+</body>
+</html>

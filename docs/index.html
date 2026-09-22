@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home · OpenAcom</title>
+<meta name="description" content="Home - Opensource, distributed, and safe agent communication.">
+<style>
+:root{--bg:#0d1420;--panel:#16202e;--panel2:#101a28;--line:#22304a;--fg:#b9c3d1;--head:#e8eef7;--accent:#3b82f6;--muted:#7d8ba0;--code:#9fc0e8;--warn:#d29922}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,"Segoe UI",Roboto,"Helvetica Neue","Microsoft YaHei",sans-serif}
+a{color:var(--accent)}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:12.5px/1.5 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--code);overflow-wrap:anywhere}
+pre.code{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;max-width:100%;font:12.5px/1.6 ui-monospace,Consolas,"Cascadia Mono",monospace;color:#c6d4e6}
+pre.code code{background:none;border:none;padding:0;color:inherit;overflow-wrap:normal;white-space:pre}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:8px;top:8px;background:var(--panel);padding:6px 10px;border-radius:6px;z-index:99}
+header.topbar{position:sticky;top:0;z-index:10;background:rgba(13,20,32,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;text-decoration:none;line-height:1.1;padding:6px 0}
+.brand .wordmark{color:#fff;font-weight:800;font-size:19px;letter-spacing:.2px}
+.brand .rule{width:34px;height:3px;background:var(--accent);border-radius:2px;margin-top:3px}
+.brand .brandtag{color:var(--muted);font-size:10px;letter-spacing:.03em;margin-top:3px;max-width:34ch}
+nav.mainnav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+nav.mainnav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:6px 9px;border-radius:6px}
+nav.mainnav a:hover{color:var(--head);background:var(--panel)}
+nav.mainnav a.on{color:var(--head);background:var(--panel);box-shadow:inset 0 -2px 0 var(--accent)}
+a.langswitch{color:var(--accent);text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+a.langswitch:hover{border-color:var(--accent)}
+.hero{padding:44px 0 8px}
+.hero .wordmark{color:#fff;font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.5px;margin:0}
+.hero .rule{width:76px;height:5px;background:var(--accent);border-radius:3px;margin:10px 0 18px}
+.hero .tagline{color:#cfd8e6;font-size:clamp(15px,2.4vw,19px);margin:0 0 10px;max-width:46ch}
+.hero .lede{max-width:70ch;margin:0 0 18px}
+.hero .meta{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin:22px 0 8px}
+.cards a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg)}
+.cards a:hover{border-color:var(--accent)}
+.cards a b{display:block;color:var(--head);font-size:14.5px;margin-bottom:4px}
+.cards a span{font-size:12.5px;color:var(--muted);display:block}
+.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:30px;padding:26px 0 40px}
+details.tocbox{align-self:start;position:sticky;top:66px}
+details.tocbox summary{cursor:pointer;color:var(--muted);font-size:13px;padding:6px 0}
+.toc-title{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc li a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-left:2px solid transparent;margin-left:-1px}
+.toc li a:hover{color:var(--head)}
+.toc li.l3 a{padding-left:22px;font-size:12.5px}
+article{min-width:0}
+article h1{color:var(--head);font-size:26px;margin:0 0 6px}
+article h1 .rule{display:block;width:52px;height:4px;background:var(--accent);border-radius:2px;margin-top:8px}
+article h2{color:var(--head);font-size:20px;margin:38px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+article h3{color:var(--head);font-size:16px;margin:26px 0 8px}
+article h4{color:var(--head);font-size:14px;margin:20px 0 6px}
+article p{margin:10px 0;max-width:82ch}
+article ul,article ol{max-width:82ch;padding-left:22px}
+article li{margin:4px 0}
+blockquote{border-left:3px solid var(--accent);background:var(--panel);margin:12px 0;padding:8px 14px;border-radius:0 8px 8px 0}
+.tablewrap{overflow-x:auto;max-width:100%;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel);color:var(--head);font-weight:600;white-space:nowrap}
+td code{white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.card h3{margin:0 0 6px}
+.card .desc{margin:6px 0 10px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:1px 9px;color:var(--muted);vertical-align:middle;margin-left:8px}
+.badge.req{color:var(--accent);border-color:var(--accent)}
+.badge.todo{color:var(--warn);border-color:var(--warn)}
+.src{color:var(--muted);font-size:11.5px;margin:8px 0 0}
+.note{color:var(--muted);font-size:13px;border-left:3px solid var(--line);padding-left:12px;margin:10px 0}
+input.filterbox{width:100%;max-width:340px;background:var(--panel2);border:1px solid var(--line);color:var(--head);border-radius:8px;padding:7px 10px;font:13.5px inherit;font-family:inherit;margin:8px 0 4px}
+input.filterbox:focus{outline:1px solid var(--accent)}
+[hidden]{display:none!important}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:18px 0 30px;color:var(--muted);font-size:12.5px}
+footer p{margin:4px 0;max-width:90ch}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;gap:10px}
+  .brand .brandtag{display:none}
+  details.tocbox{position:static;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+  .topbar .wrap{gap:10px}
+  nav.mainnav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar"><div class="wrap"><a class="brand" href="#"><span class="wordmark">OpenAcom</span><span class="rule"></span><span class="brandtag">Opensource, distributed, and safe agent communication.</span></a><nav class="mainnav" aria-label="site"><a class="on" href="#">Home</a><a href="install.html">Install</a><a href="cli.html">CLI</a><a href="mcp.html">MCP tools</a><a href="sdk.html">SDK</a><a href="relay.html">Relay & security</a><a href="guide.html">Guide</a></nav><a class="langswitch" href="zh/index.html">ZH</a></div></header>
+<div class="wrap"><div class="layout"><div></div><main id="main"><article><div class="wrap"><div class="hero"><p class="wordmark">OpenAcom</p><div class="rule"></div><p class="tagline">Opensource, distributed, and safe agent communication.</p><p class="lede">One MCP/CLI command managing agent sessions across desktops and CLIs on different local/remote machines — Claude Code, Codex, ZCode, and OpenCode.</p><p class="meta">ZCODE · CLAUDE · CODEX · OPENCODE</p><p class="meta">RELAY · TERMINAL · LIST · READ · SEND · SEND-DESKTOP · PATHS · INBOX · ACK · HOOKS · WEB · OC-SERVE · OC-ATTACH · MCP · MCP-HTTP</p><div class="cards"><a href="install.html"><b>Install</b><span>Requires Node.js ≥ 22.13 for normal invocation (uses built-in <code>node:sqlite</code>).</span></a><a href="cli.html"><b>CLI</b><span>Session ids are matched across all four agents automatically; pass <code>--agent</code> when an id could be ambiguous or to skip the full scan.</span></a><a href="mcp.html"><b>MCP tools</b><span><code>openacom mcp</code> runs a stdio MCP server with 11 tools: 8 local ones plus the 3 distributed ones (<code>relay_nodes</code>, <code>relay_send</code>, <code>relay_status</code>), which c…</span></a><a href="sdk.html"><b>SDK</b><span>OpenAcom SDK - programmatic access for other Node tools.</span></a><a href="relay.html"><b>Relay &amp; security</b><span>This chapter is the English statement of what this wave changed about meaning — the delivery invariant, the credential model, the queue boundaries, a…</span></a><a href="guide.html"><b>Guide</b><span>ZCode desktop keeps every conversation in a local SQLite database (<code>~/.zcode/cli/db/db.sqlite</code>, <code>message</code> + <code>part</code> tables).</span></a></div></div></div>
+<pre class="code" data-lang="text"><code>$ openacom list
+AGENT   SESSION                                    TITLE                                 WORKSPACE       UPDATED
+------  -----------------------------------------  ------------------------------------  --------------  --------
+zcode   sess_5027cd0f-689f-4576-8509-8a76ac51fa36  Cross-session messaging PoC           C:\…\default    just now
+claude  275c102a-8cf7-4720-935d-96b6ddfd0af3       Frontend design review                F:\Bob          1h ago
+codex   01a07b4b-bc27-7fd1-89c0-dae8c883bf06       Add topic search to the course page   F:\Saba         5h ago
+
+$ openacom send 01a07b4b-bc27-7fd1-89c0-dae8c883bf06 &quot;Research is done, please continue with the next step&quot;
+(the target session receives a real user turn; its reply is printed here)</code></pre>
+<p><code>send</code> delivers a <strong>genuine user turn</strong> to the target session. By default it is fire-and-forget (the reply lands in the transcript; <code>--wait</code> blocks for it), and for zcode it is CDP-first: when the desktop app runs with <code>--remote-debugging-port</code>, the message enters through the app's real composer (live refresh, native chain, steer of a running turn); without the debug port it tries the desktop UIA route (brief focus steal), and if that fails too the send errors out — never a silent headless run. Because that visible route presses Enter in a window you may be using, it is consent-gated: pass <code>--consent true</code> for that one message, set <code>OPENACOM_DESKTOP_CONSENT=1</code> where OpenAcom runs, write exactly <code>1</code> into the <code>desktop-consent</code> file in the OpenAcom home (<code>~/.openacom</code> by default — the resident grant MCP servers spawned by an already-running app pick up without an app restart; delete the file to revoke), keep the text unsubmitted with <code>--desktop --draft</code>, or deliver headless with <code>--no-desktop</code>. This is the building block for cross-agent orchestration: let a ZCode session drive a Claude session, script hand-offs between agents, or poke a long-running session from CI.</p></article></main></div></div>
+<footer><div class="wrap"><p>OpenAcom Version 0.16.4 · Generated by tools/gen-docs.js from README.md and the source tree; every API surface on this page is extracted, not retyped.</p><p>Single-file static HTML: no CDN, no web fonts, no runtime dependencies. Opens from disk over file://.</p><p>Sources: <code>README.md</code> <code>package.json</code> <code>bin/openacom.js</code> <code>lib/mcp.js</code> <code>lib/index.js</code> <code>lib/sdk.js</code> <code>lib/distributed.js</code> <code>lib/distributed-cli.js</code> <code>lib/desktop-delivery.js</code> <code>lib/groups.js</code> <code>lib/delivery.js</code></p></div></footer>
+</body>
+</html>

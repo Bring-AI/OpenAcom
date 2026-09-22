@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SDK · OpenAcom</title>
+<meta name="description" content="SDK - 开源、分布式、安全的 agent 通信。">
+<style>
+:root{--bg:#0d1420;--panel:#16202e;--panel2:#101a28;--line:#22304a;--fg:#b9c3d1;--head:#e8eef7;--accent:#3b82f6;--muted:#7d8ba0;--code:#9fc0e8;--warn:#d29922}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,"Segoe UI",Roboto,"Helvetica Neue","Microsoft YaHei",sans-serif}
+a{color:var(--accent)}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:12.5px/1.5 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--code);overflow-wrap:anywhere}
+pre.code{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;max-width:100%;font:12.5px/1.6 ui-monospace,Consolas,"Cascadia Mono",monospace;color:#c6d4e6}
+pre.code code{background:none;border:none;padding:0;color:inherit;overflow-wrap:normal;white-space:pre}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:8px;top:8px;background:var(--panel);padding:6px 10px;border-radius:6px;z-index:99}
+header.topbar{position:sticky;top:0;z-index:10;background:rgba(13,20,32,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;text-decoration:none;line-height:1.1;padding:6px 0}
+.brand .wordmark{color:#fff;font-weight:800;font-size:19px;letter-spacing:.2px}
+.brand .rule{width:34px;height:3px;background:var(--accent);border-radius:2px;margin-top:3px}
+.brand .brandtag{color:var(--muted);font-size:10px;letter-spacing:.03em;margin-top:3px;max-width:34ch}
+nav.mainnav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+nav.mainnav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:6px 9px;border-radius:6px}
+nav.mainnav a:hover{color:var(--head);background:var(--panel)}
+nav.mainnav a.on{color:var(--head);background:var(--panel);box-shadow:inset 0 -2px 0 var(--accent)}
+a.langswitch{color:var(--accent);text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+a.langswitch:hover{border-color:var(--accent)}
+.hero{padding:44px 0 8px}
+.hero .wordmark{color:#fff;font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.5px;margin:0}
+.hero .rule{width:76px;height:5px;background:var(--accent);border-radius:3px;margin:10px 0 18px}
+.hero .tagline{color:#cfd8e6;font-size:clamp(15px,2.4vw,19px);margin:0 0 10px;max-width:46ch}
+.hero .lede{max-width:70ch;margin:0 0 18px}
+.hero .meta{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin:22px 0 8px}
+.cards a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg)}
+.cards a:hover{border-color:var(--accent)}
+.cards a b{display:block;color:var(--head);font-size:14.5px;margin-bottom:4px}
+.cards a span{font-size:12.5px;color:var(--muted);display:block}
+.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:30px;padding:26px 0 40px}
+details.tocbox{align-self:start;position:sticky;top:66px}
+details.tocbox summary{cursor:pointer;color:var(--muted);font-size:13px;padding:6px 0}
+.toc-title{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc li a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-left:2px solid transparent;margin-left:-1px}
+.toc li a:hover{color:var(--head)}
+.toc li.l3 a{padding-left:22px;font-size:12.5px}
+article{min-width:0}
+article h1{color:var(--head);font-size:26px;margin:0 0 6px}
+article h1 .rule{display:block;width:52px;height:4px;background:var(--accent);border-radius:2px;margin-top:8px}
+article h2{color:var(--head);font-size:20px;margin:38px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+article h3{color:var(--head);font-size:16px;margin:26px 0 8px}
+article h4{color:var(--head);font-size:14px;margin:20px 0 6px}
+article p{margin:10px 0;max-width:82ch}
+article ul,article ol{max-width:82ch;padding-left:22px}
+article li{margin:4px 0}
+blockquote{border-left:3px solid var(--accent);background:var(--panel);margin:12px 0;padding:8px 14px;border-radius:0 8px 8px 0}
+.tablewrap{overflow-x:auto;max-width:100%;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel);color:var(--head);font-weight:600;white-space:nowrap}
+td code{white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.card h3{margin:0 0 6px}
+.card .desc{margin:6px 0 10px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:1px 9px;color:var(--muted);vertical-align:middle;margin-left:8px}
+.badge.req{color:var(--accent);border-color:var(--accent)}
+.badge.todo{color:var(--warn);border-color:var(--warn)}
+.src{color:var(--muted);font-size:11.5px;margin:8px 0 0}
+.note{color:var(--muted);font-size:13px;border-left:3px solid var(--line);padding-left:12px;margin:10px 0}
+input.filterbox{width:100%;max-width:340px;background:var(--panel2);border:1px solid var(--line);color:var(--head);border-radius:8px;padding:7px 10px;font:13.5px inherit;font-family:inherit;margin:8px 0 4px}
+input.filterbox:focus{outline:1px solid var(--accent)}
+[hidden]{display:none!important}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:18px 0 30px;color:var(--muted);font-size:12.5px}
+footer p{margin:4px 0;max-width:90ch}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;gap:10px}
+  .brand .brandtag{display:none}
+  details.tocbox{position:static;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+  .topbar .wrap{gap:10px}
+  nav.mainnav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="wrap"><a class="brand" href="index.html"><span class="wordmark">OpenAcom</span><span class="rule"></span><span class="brandtag">开源、分布式、安全的 agent 通信。</span></a><nav class="mainnav" aria-label="site"><a href="index.html">首页</a><a href="install.html">安装</a><a href="cli.html">CLI</a><a href="mcp.html">MCP 工具</a><a class="on" href="#">SDK</a><a href="relay.html">Relay 与安全</a><a href="guide.html">指南</a></nav><a class="langswitch" href="../sdk.html">EN</a></div></header>
+<div class="wrap"><div class="layout"><details class="tocbox" open><summary>本页目录</summary><nav class="toc"><ul><li class="l2"><a href="#sdk-surface">Node SDK</a></li><li class="l3"><a href="#sdk-glance">接口一览</a></li><li class="l3"><a href="#sdk-errors">错误标注（lib/sdk.js）</a></li></ul></nav></details><main id="main"><article><input class="filterbox" id="oa-filter" type="search" placeholder="过滤" aria-label="过滤"><h1>SDK<span class="rule"></span></h1><h2 id="sdk-surface">Node SDK</h2><p class="note">公共入口是 lib/index.js，实现位于 lib/sdk.js。签名与一句话说明读自源码；TODO 标记表示该导出没有可引用的源码注释。</p><h3 id="sdk-glance">接口一览</h3><pre class="code" data-lang="js"><code>const relay = require('openacom');   // lib/index.js
+relay.sendRouted()
+relay.listSessions(opts = {})
+relay.readSession(sessionId, opts = {})
+relay.send(sessionId, message, opts = {})
+relay.sendTracked(sessionId, message, { from = 'sdk', agent, ackTimeoutMs, maxAttempts, pollMs, sendOpts } = {})
+relay.inbox  { list, get, markRead, path }
+relay.hooks  { EVENTS, file, load }
+relay.web  { start }
+relay.adapters  { zcode, claude, codex, opencode }
+relay.agents()
+relay.sendMessage(agent, sessionId, text, opts = {})
+relay.relaySend(to, target, text, opts = {})
+relay.relayStatus(id, opts = {})
+relay.relayNodes(opts = {})
+relay.inboxMessages(opts = {})
+relay.inboxMessage(id)
+relay.postMessage(from, to, text, opts = {})
+relay.ackMessage(id, opts = {})
+relay.getPaths()
+</code></pre><section class="card" id="sdk-sendRouted" data-filter-item="sendRouted"><h3><code>relay.sendRouted()</code><span class="badge">function</span><span class="badge todo">TODO：无源码注释</span></h3><p class="src">lib/sdk.js:256</p></section><section class="card" id="sdk-listSessions" data-filter-item="listSessions"><h3><code>relay.listSessions(opts = {})</code><span class="badge">function</span></h3><p class="desc">Every session across the agents this machine can read, newest first: [{ agent, id, title, workspace, mtime }, ...].</p><p class="src">lib/sdk.js:92</p></section><section class="card" id="sdk-readSession" data-filter-item="readSession"><h3><code>relay.readSession(sessionId, opts = {})</code><span class="badge">function</span></h3><p class="desc">The last turns of one session: [{ role, text }, ...]; pass opts.agent when an id exists in more than one agent.</p><p class="src">lib/sdk.js:98</p></section><section class="card" id="sdk-send" data-filter-item="send"><h3><code>relay.send(sessionId, message, opts = {})</code><span class="badge">function</span></h3><p class="desc">Deliver with the adapter's own semantics and return what it gave back; opts: { agent, fresh, noWait, timeoutMs, desktop, cwd }.</p><p class="src">lib/sdk.js:105</p></section><section class="card" id="sdk-sendTracked" data-filter-item="sendTracked"><h3><code>relay.sendTracked(sessionId, message, { from = 'sdk', agent, ackTimeoutMs, maxAttempts, pollMs, sendOpts } = {})</code><span class="badge">function</span></h3><p class="desc">Send with a read receipt: lib/inbox.js redelivers until the target acks, up to maxAttempts, then reports status 'failed'.</p><p class="src">lib/sdk.js:112</p></section><section class="card" id="sdk-inbox" data-filter-item="inbox"><h3><code>relay.inbox</code><span class="badge">namespace</span></h3><p class="desc">Raw lib/inbox.js accessors, kept as one namespace because the published relay.inbox.* shape has a single implementation.</p><div class="tablewrap"><table><thead><tr><th>成员</th><th>类型</th><th>说明</th><th>源码</th></tr></thead><tbody><tr><td><code>list(opts)</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/sdk.js:180</code></td></tr><tr><td><code>get(id)</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/sdk.js:181</code></td></tr><tr><td><code>markRead(id, via)</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/sdk.js:182</code></td></tr><tr><td><code>path()</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/sdk.js:183</code></td></tr></tbody></table></div><p class="src">lib/sdk.js:179</p></section><section class="card" id="sdk-hooks" data-filter-item="hooks"><h3><code>relay.hooks</code><span class="badge">namespace</span></h3><div class="tablewrap"><table><thead><tr><th>成员</th><th>类型</th><th>说明</th><th>源码</th></tr></thead><tbody><tr><td><code>EVENTS()</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/index.js:19</code></td></tr><tr><td><code>file()</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/index.js:20</code></td></tr><tr><td><code>load()</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/index.js:21</code></td></tr></tbody></table></div><p class="src">lib/index.js</p></section><section class="card" id="sdk-web" data-filter-item="web"><h3><code>relay.web</code><span class="badge">namespace</span></h3><div class="tablewrap"><table><thead><tr><th>成员</th><th>类型</th><th>说明</th><th>源码</th></tr></thead><tbody><tr><td><code>start(port, opts)</code></td><td>function</td><td><span class="badge todo">TODO：无源码注释</span></td><td><code>lib/index.js:24</code></td></tr></tbody></table></div><p class="src">lib/index.js</p></section><section class="card" id="sdk-adapters" data-filter-item="adapters"><h3><code>relay.adapters</code><span class="badge">namespace</span></h3><div class="tablewrap"><table><thead><tr><th>成员</th><th>类型</th><th>说明</th><th>源码</th></tr></thead><tbody><tr><td><code>zcode</code></td><td>object</td><td></td><td><code>-</code></td></tr><tr><td><code>claude</code></td><td>object</td><td></td><td><code>-</code></td></tr><tr><td><code>codex</code></td><td>object</td><td></td><td><code>-</code></td></tr><tr><td><code>opencode</code></td><td>object</td><td></td><td><code>-</code></td></tr></tbody></table></div><p class="src">lib/index.js</p></section><section class="card" id="sdk-agents" data-filter-item="agents"><h3><code>relay.agents()</code><span class="badge">function</span></h3><p class="desc">The agent keys this build knows, taken from the adapter registry rather than a copy.</p><p class="src">lib/sdk.js:55</p></section><section class="card" id="sdk-sendMessage" data-filter-item="sendMessage"><h3><code>relay.sendMessage(agent, sessionId, text, opts = {})</code><span class="badge">function</span></h3><p class="desc">`send` with argument checks and a mandatory sender, so the receiver can see who wrote to it exactly as over MCP.</p><p class="src">lib/sdk.js:128</p></section><section class="card" id="sdk-relaySend" data-filter-item="relaySend"><h3><code>relay.relaySend(to, target, text, opts = {})</code><span class="badge">function</span></h3><p class="desc">Queue a message on a relay node; opts: { url, token, mode, id, consent }.</p><p class="src">lib/sdk.js:152</p></section><section class="card" id="sdk-relayStatus" data-filter-item="relayStatus"><h3><code>relay.relayStatus(id, opts = {})</code><span class="badge">function</span></h3><p class="desc">Durable delivery state of one relay message, including status, attempts, retryable and terminal.</p><p class="src">lib/sdk.js:168</p></section><section class="card" id="sdk-relayNodes" data-filter-item="relayNodes"><h3><code>relay.relayNodes(opts = {})</code><span class="badge">function</span></h3><p class="desc">The hub's fleet view: nodes, credential fingerprints, security alerts and the queue store acl.</p><p class="src">lib/sdk.js:174</p></section><section class="card" id="sdk-inboxMessages" data-filter-item="inboxMessages"><h3><code>relay.inboxMessages(opts = {})</code><span class="badge">function</span></h3><p class="desc">Same-machine mailbox rows as plain objects; opts: { status, from, to, limit }.</p><p class="src">lib/sdk.js:195</p></section><section class="card" id="sdk-inboxMessage" data-filter-item="inboxMessage"><h3><code>relay.inboxMessage(id)</code><span class="badge">function</span></h3><p class="desc">One mailbox row, or null when this machine never saw it.</p><p class="src">lib/sdk.js:205</p></section><section class="card" id="sdk-postMessage" data-filter-item="postMessage"><h3><code>relay.postMessage(from, to, text, opts = {})</code><span class="badge">function</span></h3><p class="desc">Post to another address's mailbox without touching any adapter, so neither side needs a live session.</p><p class="src">lib/sdk.js:212</p></section><section class="card" id="sdk-ackMessage" data-filter-item="ackMessage"><h3><code>relay.ackMessage(id, opts = {})</code><span class="badge">function</span></h3><p class="desc">Mark a received mailbox item read, which is what stops a tracked send from redelivering it.</p><p class="src">lib/sdk.js:227</p></section><section class="card" id="sdk-getPaths" data-filter-item="getPaths"><h3><code>relay.getPaths()</code><span class="badge">function</span></h3><p class="desc">Where this installation keeps its stores and what it can reach; same field names as the get_paths MCP tool.</p><p class="src">lib/sdk.js:234</p></section><h3 id="sdk-errors">错误标注（lib/sdk.js）</h3><div class="tablewrap"><table><thead><tr><th>错误码</th><th>含义</th></tr></thead><tbody><tr><td><code>SESSION_NOT_FOUND</code></td><td><code>/^session not found/</code></td></tr><tr><td><code>AMBIGUOUS_SESSION</code></td><td><code>/session id exists in/</code></td></tr><tr><td><code>SESSION_NOT_FOUND</code></td><td><code>/^target session not found/</code></td></tr><tr><td><code>UNKNOWN_AGENT</code></td><td><code>/unknown agent/</code></td></tr><tr><td><code>NOT_FOUND</code></td><td><code>/^unknown message id/</code></td></tr></tbody></table></div><p class="note"><code>SESSION_NOT_FOUND</code> <code>AMBIGUOUS_SESSION</code> <code>UNKNOWN_AGENT</code> <code>INVALID_ARGUMENT</code> <code>NOT_FOUND</code></p></article></main></div></div>
+<footer><div class="wrap"><p>OpenAcom 版本 0.16.4 · 由 tools/gen-docs.js 从 README.md 与源码树生成；本页所有 API 面均为抽取，而非手抄。</p><p>单文件静态 HTML：无 CDN、无外部字体、无运行时依赖，可直接以 file:// 打开。</p><p>来源: <code>README.md</code> <code>package.json</code> <code>bin/openacom.js</code> <code>lib/mcp.js</code> <code>lib/index.js</code> <code>lib/sdk.js</code> <code>lib/distributed.js</code> <code>lib/distributed-cli.js</code> <code>lib/desktop-delivery.js</code> <code>lib/groups.js</code> <code>lib/delivery.js</code></p></div></footer>
+<script>
+(function(){var input=document.getElementById("oa-filter");if(!input)return;input.addEventListener("input",function(){var q=input.value.trim().toLowerCase();document.querySelectorAll("[data-filter-item]").forEach(function(el){el.hidden=q!==""&&el.getAttribute("data-filter-item").toLowerCase().indexOf(q)===-1;});});})();
+</script>
+</body>
+</html>

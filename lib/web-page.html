@@ -57,6 +57,7 @@
   <div id="detail"></div>
 </main>
 <script>
+  window.__OPENACOM_TOKEN__ = typeof __OA_TOKEN__ === 'string' ? __OA_TOKEN__ : '';
   const STATUS_CN = { pending: '待发送', sent: '待回执', read: '已读', failed: '失败' };
   const ORDER = ['all', 'sent', 'read', 'failed', 'pending'];
   let filter = 'all', selected = null, stats = {};
@@ -71,7 +72,10 @@
   }
   function snippet(t) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > 90 ? t.slice(0, 90) + '…' : t; }
 
-  async function api(p, opts) { const r = await fetch(p, opts); return r.json(); }
+  async function api(p, opts) {
+    const o = Object.assign({}, opts, { headers: Object.assign({ 'X-OpenAcom-Token': window.__OPENACOM_TOKEN__ }, (opts && opts.headers) || {}) });
+    const r = await fetch(p, o); return r.json();
+  }
 
   function renderChips() {
     const el = document.getElementById('chips');
@@ -121,7 +125,7 @@
   }
 
   async function load() {
-    const rows = await api('/api/messages' + (filter === 'all' ? '' : '?status=' + filter) + '&limit=200');
+    const rows = await api('/api/messages?' + (filter === 'all' ? '' : 'status=' + encodeURIComponent(filter) + '&') + 'limit=200');
     renderList(rows);
     stats = await api('/api/stats');
     renderChips();

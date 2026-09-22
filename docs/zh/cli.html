@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI · OpenAcom</title>
+<meta name="description" content="CLI - 开源、分布式、安全的 agent 通信。">
+<style>
+:root{--bg:#0d1420;--panel:#16202e;--panel2:#101a28;--line:#22304a;--fg:#b9c3d1;--head:#e8eef7;--accent:#3b82f6;--muted:#7d8ba0;--code:#9fc0e8;--warn:#d29922}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,"Segoe UI",Roboto,"Helvetica Neue","Microsoft YaHei",sans-serif}
+a{color:var(--accent)}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:12.5px/1.5 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--code);overflow-wrap:anywhere}
+pre.code{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;max-width:100%;font:12.5px/1.6 ui-monospace,Consolas,"Cascadia Mono",monospace;color:#c6d4e6}
+pre.code code{background:none;border:none;padding:0;color:inherit;overflow-wrap:normal;white-space:pre}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:8px;top:8px;background:var(--panel);padding:6px 10px;border-radius:6px;z-index:99}
+header.topbar{position:sticky;top:0;z-index:10;background:rgba(13,20,32,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;text-decoration:none;line-height:1.1;padding:6px 0}
+.brand .wordmark{color:#fff;font-weight:800;font-size:19px;letter-spacing:.2px}
+.brand .rule{width:34px;height:3px;background:var(--accent);border-radius:2px;margin-top:3px}
+.brand .brandtag{color:var(--muted);font-size:10px;letter-spacing:.03em;margin-top:3px;max-width:34ch}
+nav.mainnav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+nav.mainnav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:6px 9px;border-radius:6px}
+nav.mainnav a:hover{color:var(--head);background:var(--panel)}
+nav.mainnav a.on{color:var(--head);background:var(--panel);box-shadow:inset 0 -2px 0 var(--accent)}
+a.langswitch{color:var(--accent);text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+a.langswitch:hover{border-color:var(--accent)}
+.hero{padding:44px 0 8px}
+.hero .wordmark{color:#fff;font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.5px;margin:0}
+.hero .rule{width:76px;height:5px;background:var(--accent);border-radius:3px;margin:10px 0 18px}
+.hero .tagline{color:#cfd8e6;font-size:clamp(15px,2.4vw,19px);margin:0 0 10px;max-width:46ch}
+.hero .lede{max-width:70ch;margin:0 0 18px}
+.hero .meta{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin:22px 0 8px}
+.cards a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg)}
+.cards a:hover{border-color:var(--accent)}
+.cards a b{display:block;color:var(--head);font-size:14.5px;margin-bottom:4px}
+.cards a span{font-size:12.5px;color:var(--muted);display:block}
+.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:30px;padding:26px 0 40px}
+details.tocbox{align-self:start;position:sticky;top:66px}
+details.tocbox summary{cursor:pointer;color:var(--muted);font-size:13px;padding:6px 0}
+.toc-title{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc li a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-left:2px solid transparent;margin-left:-1px}
+.toc li a:hover{color:var(--head)}
+.toc li.l3 a{padding-left:22px;font-size:12.5px}
+article{min-width:0}
+article h1{color:var(--head);font-size:26px;margin:0 0 6px}
+article h1 .rule{display:block;width:52px;height:4px;background:var(--accent);border-radius:2px;margin-top:8px}
+article h2{color:var(--head);font-size:20px;margin:38px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+article h3{color:var(--head);font-size:16px;margin:26px 0 8px}
+article h4{color:var(--head);font-size:14px;margin:20px 0 6px}
+article p{margin:10px 0;max-width:82ch}
+article ul,article ol{max-width:82ch;padding-left:22px}
+article li{margin:4px 0}
+blockquote{border-left:3px solid var(--accent);background:var(--panel);margin:12px 0;padding:8px 14px;border-radius:0 8px 8px 0}
+.tablewrap{overflow-x:auto;max-width:100%;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel);color:var(--head);font-weight:600;white-space:nowrap}
+td code{white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.card h3{margin:0 0 6px}
+.card .desc{margin:6px 0 10px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:1px 9px;color:var(--muted);vertical-align:middle;margin-left:8px}
+.badge.req{color:var(--accent);border-color:var(--accent)}
+.badge.todo{color:var(--warn);border-color:var(--warn)}
+.src{color:var(--muted);font-size:11.5px;margin:8px 0 0}
+.note{color:var(--muted);font-size:13px;border-left:3px solid var(--line);padding-left:12px;margin:10px 0}
+input.filterbox{width:100%;max-width:340px;background:var(--panel2);border:1px solid var(--line);color:var(--head);border-radius:8px;padding:7px 10px;font:13.5px inherit;font-family:inherit;margin:8px 0 4px}
+input.filterbox:focus{outline:1px solid var(--accent)}
+[hidden]{display:none!important}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:18px 0 30px;color:var(--muted);font-size:12.5px}
+footer p{margin:4px 0;max-width:90ch}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;gap:10px}
+  .brand .brandtag{display:none}
+  details.tocbox{position:static;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+  .topbar .wrap{gap:10px}
+  nav.mainnav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="wrap"><a class="brand" href="index.html"><span class="wordmark">OpenAcom</span><span class="rule"></span><span class="brandtag">开源、分布式、安全的 agent 通信。</span></a><nav class="mainnav" aria-label="site"><a href="index.html">首页</a><a href="install.html">安装</a><a class="on" href="#">CLI</a><a href="mcp.html">MCP 工具</a><a href="sdk.html">SDK</a><a href="relay.html">Relay 与安全</a><a href="guide.html">指南</a></nav><a class="langswitch" href="../cli.html">EN</a></div></header>
+<div class="wrap"><div class="layout"><details class="tocbox" open><summary>本页目录</summary><nav class="toc"><ul><li class="l2"><a href="#cli-reference">CLI 参考</a></li><li class="l3"><a href="#cli-usage">用法（HELP 文本，原样）</a></li><li class="l3"><a href="#cli-subcommands">子命令（main 分发）</a></li><li class="l3"><a href="#cli-flags">旗标（parseArgs）</a></li><li class="l3"><a href="#cli-relay-terminal">relay / terminal（lib/distributed-cli.js）</a></li></ul></nav></details><main id="main"><article><input class="filterbox" id="oa-filter" type="search" placeholder="过滤" aria-label="过滤"><h1>CLI<span class="rule"></span></h1><h2 id="cli-reference">CLI 参考</h2><p class="note">从 bin/openacom.js 抽取：HELP 文本原样呈现、parseArgs 旗标表、main() 分发。</p><h3 id="cli-usage">用法（HELP 文本，原样）</h3><pre class="code" data-lang="text"><code>OpenAcom — one MCP/CLI command managing agent sessions across desktops and CLIs (Claude Code / Codex / ZCode / OpenCode), local and remote
+
+Usage:
+  openacom deliver &lt;agent:sessionId|node:nodeId/target&gt; &lt;message...&gt; --from &lt;agent:sessionId&gt; [--route auto|session|desktopcdp|desktop|relay|mailbox] [--id ID] [--consent true]  inbox then one delivery attempt
+  openacom list  [query...] [--agent A] [--workspace DIR] [--limit N] [--json]   fuzzy search; --workspace lists sessions of one project (substring path match)
+  openacom read  &lt;sessionId&gt; [--agent A] [--last N] [--json]
+  openacom send  &lt;message...&gt;             fresh zcode session per message (recommended; visible in the desktop task list)
+  openacom send  &lt;sessionId&gt; &lt;message...&gt; [--agent A] [--timeout ms] [--json] [--desktop] [--consent true|false] [--draft] [--wait] [--no-wait]  resume a session
+  openacom send  &lt;sessionId&gt; &lt;message...&gt; --require-read [--ack-timeout ms]  send with read receipt: auto-redeliver until acked, 3 attempts max
+  openacom send-desktop &lt;sessionId&gt; &lt;message...&gt; [--consent true] [--timeout ms] [--json]   INJECT into the ZCode desktop window and press Enter (Windows; needs one consent signal; no fallback)
+  openacom inbox [--status pending|sent|read|failed] [--limit N] [--json]  tracked sends and their read status
+  openacom ack    &lt;messageId&gt;    manually mark a tracked message as read
+  openacom paths
+  openacom oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)
+  openacom oc-attach [dir] [--port N]   open a live TUI on the project's shared server (starts it if needed)
+  openacom mcp   Run as a stdio MCP server exposing the same operations as tools
+  openacom relay --help   durable multi-machine messaging over SSH-forwardable HTTP
+  openacom terminal --name TARGET -- PROGRAM [ARGS...]   visible, controlled TUI input
+
+Notes:
+  - sessionId is matched across all agents unless --agent pins one.
+  - send delivers a real new turn to the target session and prints its reply
+    (synchronous headless resume; costs model tokens on the target agent).
+  - The injected desktop route (--desktop, zcode on Windows) types the text into
+    the real ZCode window and presses Enter, so a submit there needs consent.
+    Without consent it is refused (CONSENT_REQUIRED) and nothing is typed:
+      --draft            leave the text in the composer for a human to review;
+                         presses no Enter, so it needs no consent. Requires
+                         --desktop, because only that sender can stop before Enter.
+      --consent true     an operator approved pressing Enter for THIS message.
+      --no-desktop       do not inject: run the turn headless instead (needs
+                         zcode.cjs + a provider config) and print its reply.
+    OPENACOM_DESKTOP_CONSENT=1 grants submit to every injected desktop send from
+    that process - the blunt option, for a machine you personally own. The
+    desktop-consent file (exactly &quot;1&quot;, in the OpenAcom home ~/.openacom) is the
+    same resident grant for already-running MCP servers; delete it to revoke.
+    All four are flags about INJECTION. None of them is a precondition of sending,
+    and a refused injection is not a half-sent message: the target stays untouched.
+  - send-desktop is the named injection entry point: it submits through the ZCode
+    desktop UI and never retreats - no headless run, no stored message, and no
+    second transport after anything was typed. What it does NOT do is skip your
+    approval, so it still needs --consent true or OPENACOM_DESKTOP_CONSENT=1.
+  - opencode targets are steered directly: the message lands in that exact
+    session (never forked), and the CLI streams the turn live (header, tool
+    progress, reply). Blocking is the default; --no-wait detaches instead.
+  - opencode sends auto-start the project's shared server when needed, so an
+    attached TUI shows the turn live with zero setup (AGENTRELAY_OPENCODE_URL
+    overrides the probe; AGENTRELAY_OPENCODE_NOSERVE=1 disables auto-start and
+    falls back to run). oc-serve only pre-warms.
+  - Env overrides: AGENTRELAY_ZCODE_CLI (path to zcode.cjs).
+</code></pre><h3 id="cli-subcommands">子命令（main 分发）</h3><div class="tablewrap"><table><thead><tr><th>子命令</th><th>处理函数</th><th>用法</th><th>源码</th></tr></thead><tbody><tr><td><code>relay</code></td><td><code>../lib/distributed-cli</code></td><td><code>openacom relay --help   durable multi-machine messaging over SSH-forwardable HTTP</code></td><td><code>bin/openacom.js:412</code></td></tr><tr><td><code>terminal</code></td><td><code>-</code></td><td><code>openacom terminal --name TARGET -- PROGRAM [ARGS...]   visible, controlled TUI input</code></td><td><code>bin/openacom.js:413</code></td></tr><tr><td><code>list</code></td><td><code>cmdList(flags)</code></td><td><code>openacom list  [query...] [--agent A] [--workspace DIR] [--limit N] [--json]   fuzzy search; --workspace lists sessions of one project (substring path match)</code></td><td><code>bin/openacom.js:420</code></td></tr><tr><td><code>read</code></td><td><code>cmdRead(flags)</code></td><td><code>openacom read  &lt;sessionId&gt; [--agent A] [--last N] [--json]</code></td><td><code>bin/openacom.js:421</code></td></tr><tr><td><code>send</code></td><td><code>cmdSend(flags)</code></td><td><code>openacom send  &lt;message...&gt;             fresh zcode session per message (recommended; visible in the desktop task list) openacom send  &lt;sessionId&gt; &lt;message...&gt; [--agent A] [--timeout ms] [--json] [--desktop] [--consent true|false] [--draft] [--wait] [--no-wait]  resume a session openacom send  &lt;sessionId&gt; &lt;message...&gt; --require-read [--ack-timeout ms]  send with read receipt: auto-redeliver until acked, 3 attempts max</code></td><td><code>bin/openacom.js:434</code></td></tr><tr><td><code>send-desktop</code></td><td><code>cmdSendDesktop(flags)</code></td><td><code>openacom send-desktop &lt;sessionId&gt; &lt;message...&gt; [--consent true] [--timeout ms] [--json]   INJECT into the ZCode desktop window and press Enter (Windows; needs one consent signal; no fallback)</code></td><td><code>bin/openacom.js:435</code></td></tr><tr><td><code>paths</code></td><td><code>cmdPaths()</code></td><td><code>openacom paths</code></td><td><code>bin/openacom.js:436</code></td></tr><tr><td><code>inbox</code></td><td><code>cmdInbox(flags)</code></td><td><code>openacom inbox [--status pending|sent|read|failed] [--limit N] [--json]  tracked sends and their read status</code></td><td><code>bin/openacom.js:437</code></td></tr><tr><td><code>ack</code></td><td><code>cmdAck(flags)</code></td><td><code>openacom ack    &lt;messageId&gt;    manually mark a tracked message as read</code></td><td><code>bin/openacom.js:438</code></td></tr><tr><td><code>hooks</code></td><td><code>cmdHooks()</code></td><td><code>-</code></td><td><code>bin/openacom.js:439</code></td></tr><tr><td><code>web</code></td><td><code>cmdWeb(flags)</code></td><td><code>-</code></td><td><code>bin/openacom.js:440</code></td></tr><tr><td><code>oc-serve</code></td><td><code>cmdOcServe(flags)</code></td><td><code>openacom oc-serve [dir] [--port N]   pre-warm the shared opencode server (send auto-starts it anyway)</code></td><td><code>bin/openacom.js:441</code></td></tr><tr><td><code>oc-attach</code></td><td><code>cmdOcAttach(flags)</code></td><td><code>openacom oc-attach [dir] [--port N]   open a live TUI on the project's shared server (starts it if needed)</code></td><td><code>bin/openacom.js:442</code></td></tr><tr><td><code>mcp</code></td><td><code>require('../lib/mcp').run()</code></td><td><code>openacom mcp   Run as a stdio MCP server exposing the same operations as tools</code></td><td><code>bin/openacom.js:443</code></td></tr><tr><td><code>mcp-http</code></td><td><code>require('../lib/mcp-http').runHttp(parseInt(rest[0], 10) || 9321)</code></td><td><code>-</code></td><td><code>bin/openacom.js:444</code></td></tr></tbody></table></div><h3 id="cli-flags">旗标（parseArgs）</h3><div class="tablewrap"><table><thead><tr><th>旗标</th><th>取值</th><th>写入</th><th>HELP 中</th><th>源码</th></tr></thead><tbody><tr data-filter-item="--agent"><td><code>--agent</code></td><td>string value</td><td><code>flags.agent</code></td><td>是</td><td><code>bin/openacom.js:69</code></td></tr><tr data-filter-item="--route --from --id --mode"><td><code>--route</code> <code>--from</code> <code>--id</code> <code>--mode</code></td><td>string value</td><td><code>flags._</code></td><td>是</td><td><code>bin/openacom.js:70</code></td></tr><tr data-filter-item="--limit"><td><code>--limit</code></td><td>integer</td><td><code>flags.limit</code></td><td>是</td><td><code>bin/openacom.js:71</code></td></tr><tr data-filter-item="--last -n"><td><code>--last</code> <code>-n</code></td><td>integer</td><td><code>flags.last</code></td><td>是</td><td><code>bin/openacom.js:72</code></td></tr><tr data-filter-item="--timeout"><td><code>--timeout</code></td><td>integer</td><td><code>flags.timeout</code></td><td>是</td><td><code>bin/openacom.js:73</code></td></tr><tr data-filter-item="--port"><td><code>--port</code></td><td>integer</td><td><code>flags.port</code></td><td>是</td><td><code>bin/openacom.js:74</code></td></tr><tr data-filter-item="--json"><td><code>--json</code></td><td>boolean</td><td><code>flags.json</code></td><td>是</td><td><code>bin/openacom.js:75</code></td></tr><tr data-filter-item="--desktop"><td><code>--desktop</code></td><td>boolean</td><td><code>flags.desktop</code></td><td>是</td><td><code>bin/openacom.js:76</code></td></tr><tr data-filter-item="--consent"><td><code>--consent</code></td><td>true|false</td><td><code>flags.consent</code></td><td>是</td><td><code>bin/openacom.js:77</code></td></tr><tr data-filter-item="--draft"><td><code>--draft</code></td><td>boolean</td><td><code>flags.draft</code></td><td>是</td><td><code>bin/openacom.js:78</code></td></tr><tr data-filter-item="--fresh"><td><code>--fresh</code></td><td>boolean</td><td><code>flags.fresh</code></td><td>否</td><td><code>bin/openacom.js:79</code></td></tr><tr data-filter-item="--wait"><td><code>--wait</code></td><td>boolean</td><td><code>flags.wait</code></td><td>是</td><td><code>bin/openacom.js:80</code></td></tr><tr data-filter-item="--require-read"><td><code>--require-read</code></td><td>boolean</td><td><code>flags.requireRead</code></td><td>是</td><td><code>bin/openacom.js:81</code></td></tr><tr data-filter-item="--ack-timeout"><td><code>--ack-timeout</code></td><td>integer</td><td><code>flags.ackTimeout</code></td><td>是</td><td><code>bin/openacom.js:82</code></td></tr><tr data-filter-item="--status"><td><code>--status</code></td><td>string value</td><td><code>flags.status</code></td><td>是</td><td><code>bin/openacom.js:83</code></td></tr><tr data-filter-item="--workspace -w"><td><code>--workspace</code> <code>-w</code></td><td>string value</td><td><code>flags.workspace</code></td><td>是</td><td><code>bin/openacom.js:84</code></td></tr><tr data-filter-item="--no-wait"><td><code>--no-wait</code></td><td>boolean</td><td><code>flags.noWait</code></td><td>是</td><td><code>bin/openacom.js:85</code></td></tr><tr data-filter-item="--no-desktop"><td><code>--no-desktop</code></td><td>boolean (off)</td><td><code>flags.desktop</code></td><td>是</td><td><code>bin/openacom.js:86</code></td></tr><tr data-filter-item="--help -h"><td><code>--help</code> <code>-h</code></td><td>boolean</td><td><code>flags.help</code></td><td>是</td><td><code>bin/openacom.js:87</code></td></tr></tbody></table></div><div class="tablewrap"><table><thead><tr><th>旗标</th><th>处理函数</th></tr></thead><tbody><tr><td><code>--name</code></td><td><code>lib/distributed-cli.js (terminal)</code></td></tr></tbody></table></div><h3 id="cli-relay-terminal">relay / terminal（lib/distributed-cli.js）</h3><pre class="code" data-lang="text"><code>Distributed OpenAcom (separate from legacy headless send)
+  openacom relay hub [--host 127.0.0.1] [--port 9330] [--data DIR]
+  openacom relay node --id MACHINE --targets FILE [--url URL] [--data DIR]
+  openacom relay nodes [--url URL]
+  openacom relay send MACHINE TARGET MESSAGE [--mode submit|draft] [--id MESSAGE_ID] [--consent true|false] [--url URL]
+  openacom relay status MESSAGE_ID [--url URL]
+  openacom relay token                    generate a shared secret
+  openacom terminal --name TARGET [--data DIR] -- PROGRAM [ARGS...]
+Environment: AGENTRELAY_TOKEN (32+ characters), AGENTRELAY_URL (default http://127.0.0.1:9330).
+Only locally configured targets can receive messages. Status means input delivery, not model completion.
+Use SSH forwarding for non-public machines. Do not expose the hub or desktop debugging port publicly.
+Desktop (zcode) targets default to draft mode. A submit needs either --consent true on that message or
+OPENACOM_DESKTOP_CONSENT=1 in the environment of the node process that owns the desktop; without one of
+the two it is refused (CONSENT_REQUIRED) and the target is never touched.
+</code></pre><div class="tablewrap"><table><thead><tr><th>子命令</th><th>取值</th></tr></thead><tbody><tr><td><code>relay hub</code></td><td><code>--host</code> <code>--port</code> <code>--data</code></td></tr><tr><td><code>relay node</code></td><td><code>--id</code> <code>--targets</code> <code>--url</code> <code>--data</code></td></tr><tr><td><code>relay nodes</code></td><td><code>--url</code></td></tr><tr><td><code>relay send</code></td><td><code>--url</code> <code>--mode</code> <code>--id</code> <code>--consent</code></td></tr><tr><td><code>relay status</code></td><td><code>--url</code></td></tr><tr><td><code>relay token</code></td><td>-</td></tr><tr><td><code>terminal</code></td><td><code>--name</code> <code>--data</code> <code>--</code></td></tr></tbody></table></div></article></main></div></div>
+<footer><div class="wrap"><p>OpenAcom 版本 0.16.4 · 由 tools/gen-docs.js 从 README.md 与源码树生成；本页所有 API 面均为抽取，而非手抄。</p><p>单文件静态 HTML：无 CDN、无外部字体、无运行时依赖，可直接以 file:// 打开。</p><p>来源: <code>README.md</code> <code>package.json</code> <code>bin/openacom.js</code> <code>lib/mcp.js</code> <code>lib/index.js</code> <code>lib/sdk.js</code> <code>lib/distributed.js</code> <code>lib/distributed-cli.js</code> <code>lib/desktop-delivery.js</code> <code>lib/groups.js</code> <code>lib/delivery.js</code></p></div></footer>
+<script>
+(function(){var input=document.getElementById("oa-filter");if(!input)return;input.addEventListener("input",function(){var q=input.value.trim().toLowerCase();document.querySelectorAll("[data-filter-item]").forEach(function(el){el.hidden=q!==""&&el.getAttribute("data-filter-item").toLowerCase().indexOf(q)===-1;});});})();
+</script>
+</body>
+</html>

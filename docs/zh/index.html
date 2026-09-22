@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>首页 · OpenAcom</title>
+<meta name="description" content="首页 - 开源、分布式、安全的 agent 通信。">
+<style>
+:root{--bg:#0d1420;--panel:#16202e;--panel2:#101a28;--line:#22304a;--fg:#b9c3d1;--head:#e8eef7;--accent:#3b82f6;--muted:#7d8ba0;--code:#9fc0e8;--warn:#d29922}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,"Segoe UI",Roboto,"Helvetica Neue","Microsoft YaHei",sans-serif}
+a{color:var(--accent)}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:12.5px/1.5 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--code);overflow-wrap:anywhere}
+pre.code{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;max-width:100%;font:12.5px/1.6 ui-monospace,Consolas,"Cascadia Mono",monospace;color:#c6d4e6}
+pre.code code{background:none;border:none;padding:0;color:inherit;overflow-wrap:normal;white-space:pre}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:8px;top:8px;background:var(--panel);padding:6px 10px;border-radius:6px;z-index:99}
+header.topbar{position:sticky;top:0;z-index:10;background:rgba(13,20,32,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;text-decoration:none;line-height:1.1;padding:6px 0}
+.brand .wordmark{color:#fff;font-weight:800;font-size:19px;letter-spacing:.2px}
+.brand .rule{width:34px;height:3px;background:var(--accent);border-radius:2px;margin-top:3px}
+.brand .brandtag{color:var(--muted);font-size:10px;letter-spacing:.03em;margin-top:3px;max-width:34ch}
+nav.mainnav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+nav.mainnav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:6px 9px;border-radius:6px}
+nav.mainnav a:hover{color:var(--head);background:var(--panel)}
+nav.mainnav a.on{color:var(--head);background:var(--panel);box-shadow:inset 0 -2px 0 var(--accent)}
+a.langswitch{color:var(--accent);text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+a.langswitch:hover{border-color:var(--accent)}
+.hero{padding:44px 0 8px}
+.hero .wordmark{color:#fff;font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.5px;margin:0}
+.hero .rule{width:76px;height:5px;background:var(--accent);border-radius:3px;margin:10px 0 18px}
+.hero .tagline{color:#cfd8e6;font-size:clamp(15px,2.4vw,19px);margin:0 0 10px;max-width:46ch}
+.hero .lede{max-width:70ch;margin:0 0 18px}
+.hero .meta{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin:22px 0 8px}
+.cards a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg)}
+.cards a:hover{border-color:var(--accent)}
+.cards a b{display:block;color:var(--head);font-size:14.5px;margin-bottom:4px}
+.cards a span{font-size:12.5px;color:var(--muted);display:block}
+.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:30px;padding:26px 0 40px}
+details.tocbox{align-self:start;position:sticky;top:66px}
+details.tocbox summary{cursor:pointer;color:var(--muted);font-size:13px;padding:6px 0}
+.toc-title{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc li a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-left:2px solid transparent;margin-left:-1px}
+.toc li a:hover{color:var(--head)}
+.toc li.l3 a{padding-left:22px;font-size:12.5px}
+article{min-width:0}
+article h1{color:var(--head);font-size:26px;margin:0 0 6px}
+article h1 .rule{display:block;width:52px;height:4px;background:var(--accent);border-radius:2px;margin-top:8px}
+article h2{color:var(--head);font-size:20px;margin:38px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+article h3{color:var(--head);font-size:16px;margin:26px 0 8px}
+article h4{color:var(--head);font-size:14px;margin:20px 0 6px}
+article p{margin:10px 0;max-width:82ch}
+article ul,article ol{max-width:82ch;padding-left:22px}
+article li{margin:4px 0}
+blockquote{border-left:3px solid var(--accent);background:var(--panel);margin:12px 0;padding:8px 14px;border-radius:0 8px 8px 0}
+.tablewrap{overflow-x:auto;max-width:100%;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel);color:var(--head);font-weight:600;white-space:nowrap}
+td code{white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.card h3{margin:0 0 6px}
+.card .desc{margin:6px 0 10px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:1px 9px;color:var(--muted);vertical-align:middle;margin-left:8px}
+.badge.req{color:var(--accent);border-color:var(--accent)}
+.badge.todo{color:var(--warn);border-color:var(--warn)}
+.src{color:var(--muted);font-size:11.5px;margin:8px 0 0}
+.note{color:var(--muted);font-size:13px;border-left:3px solid var(--line);padding-left:12px;margin:10px 0}
+input.filterbox{width:100%;max-width:340px;background:var(--panel2);border:1px solid var(--line);color:var(--head);border-radius:8px;padding:7px 10px;font:13.5px inherit;font-family:inherit;margin:8px 0 4px}
+input.filterbox:focus{outline:1px solid var(--accent)}
+[hidden]{display:none!important}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:18px 0 30px;color:var(--muted);font-size:12.5px}
+footer p{margin:4px 0;max-width:90ch}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;gap:10px}
+  .brand .brandtag{display:none}
+  details.tocbox{position:static;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+  .topbar .wrap{gap:10px}
+  nav.mainnav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="wrap"><a class="brand" href="#"><span class="wordmark">OpenAcom</span><span class="rule"></span><span class="brandtag">开源、分布式、安全的 agent 通信。</span></a><nav class="mainnav" aria-label="site"><a class="on" href="#">首页</a><a href="install.html">安装</a><a href="cli.html">CLI</a><a href="mcp.html">MCP 工具</a><a href="sdk.html">SDK</a><a href="relay.html">Relay 与安全</a><a href="guide.html">指南</a></nav><a class="langswitch" href="../index.html">EN</a></div></header>
+<div class="wrap"><div class="layout"><div></div><main id="main"><article><span id="chinese"></span><div class="wrap"><div class="hero"><p class="wordmark">OpenAcom</p><div class="rule"></div><p class="tagline">开源、分布式、安全的 agent 通信。</p><p class="lede">OpenAcom：一个 MCP/CLI 命令，跨桌面端与 CLI、跨本地与远程机器，统一管理 Claude Code / Codex / ZCode / OpenCode 的 agent 会话。</p><p class="meta">ZCODE · CLAUDE · CODEX · OPENCODE</p><p class="meta">RELAY · TERMINAL · LIST · READ · SEND · SEND-DESKTOP · PATHS · INBOX · ACK · HOOKS · WEB · OC-SERVE · OC-ATTACH · MCP · MCP-HTTP</p><div class="cards"><a href="install.html"><b>安装</b><span>安装：<code>npm install -g github:Bring-AI/OpenAcom</code>（需 Node ≥ 22.13；22.5–22.12 需加 <code>--experimental-sqlite</code>）。<code>Bring-AI/OpenAcom</code> 当前是 private 仓库：从 GitHub 安装需要 对…</span></a><a href="cli.html"><b>CLI</b><span>- <code>openacom list [关键词...]</code> — 四家 session 混合列表 + 模糊搜索（匹配 agent/ID/标题/工作区，多词 AND），默认 top 30，<code>--limit N</code> 覆盖</span></a><a href="mcp.html"><b>MCP 工具</b><span>（逐个说明见下面「MCP 工具一览」）；接入 Claude Code、Claude Desktop、Codex、ZCode 等 MCP 客户端，配置示例见上方英文段。分布式三件套 <code>relay_nodes</code> / <code>relay_send</code> / <code>relay_status</code> 也一直在工具列表里，它们用…</span></a><a href="sdk.html"><b>SDK</b><span>OpenAcom SDK - programmatic access for other Node tools.</span></a><a href="relay.html"><b>Relay 与安全</b><span>新增的 <code>relay</code> 命令与旧的 <code>send</code> 独立：旧 <code>send</code> 的 Claude/Codex 后台 resume 不保证当前 TUI 可见；需要可见输入请使用下面的终端托管方式。</span></a><a href="guide.html"><b>指南</b><span>ZCode 桌面把全部对话存在本地 SQLite（<code>~/.zcode/cli/db/db.sqlite</code>，<code>message</code>+<code>part</code> 表）。读取直接查库；发送逆出了三条路：</span></a></div></div></div>
+<ul><li><code>openacom list [关键词...]</code> — 四家 session 混合列表 + <strong>模糊搜索</strong>（匹配 agent/ID/标题/工作区，多词 AND），默认 top 30，<code>--limit N</code> 覆盖</li><li><code>openacom read &lt;sessionId&gt;</code> — 读取任意 session 的最近对话（自动跨四家匹配 id）</li><li><code>openacom send &lt;消息&gt;</code> / <code>send &lt;sessionId&gt; &lt;消息&gt;</code> — 注入<strong>真实用户回合</strong>。默认异步 （发完即返回，回复落在会话转录里，用 <code>read</code> 查看）；加 <code>--wait</code> 则阻塞等回复并打印。 <strong>zcode 续会话默认可见投递</strong>，会按回车，因此需要 <code>--consent true</code>（或进程环境 <code>OPENACOM_DESKTOP_CONSENT=1</code>）；<code>--desktop --draft</code> 只填草稿不回车，<code>--no-desktop</code> 走无头。<strong>opencode 例外</strong>：直接 steer 目标会话原地执行（永不 <code>--fork</code>），CLI 默认阻塞并实时 流式打印（头部、工具进度、回复），<code>--no-wait</code> 才走后台；<code>--json</code> 时实时流走 stderr， stdout 只留干净的最终回复</li><li><code>openacom oc-serve [目录] [--port N]</code> — 预热项目目录的<strong>共享 opencode server</strong>（确定性端口 = 目录哈希，44000-44996），并打印可直接粘贴的 attach 命令。平时不需要手动跑：<code>send</code> 发往 opencode 会话时会自动起服、自动复用， 首次起服时 CLI 只提示一次 attach 行；起不了服则自动回退 <code>opencode run</code> 路径，投递永远可用（<code>AGENTRELAY_OPENCODE_NOSERVE=1</code> 可彻底关掉自动起服）</li><li><code>openacom oc-attach [目录] [--port N]</code> — 一步打开该项目共享 server 的实时 TUI；server 未启动时会自动启动，不需要查端口或复制 URL</li><li><code>openacom paths</code> — 显示探测到的存储路径与 CLI（含 <code>logDirAcl</code> / <code>inboxAcl</code>：这两个 目录收紧成功是 <code>private</code>，<code>icacls</code>/<code>chmod</code> 没能收住时是 <code>inherited</code>）</li><li><code>openacom web [--port N]</code> — 本地收件箱面板（默认 <code>127.0.0.1:9339</code>）。<strong>现在需要 token</strong>：首次启动自动生成 <code>~/.openacom/openacom-web.token</code>（<code>0600</code>）并把明文 token 打到 stderr 一次；不想让它进日志就用 <code>AGENTRELAY_WEB_TOKEN</code> 固定。所有 <code>/api/*</code> 都要带 <code>X-OpenAcom-Token</code>，且 <code>Host</code> 必须是 <code>127.0.0.1:&lt;port&gt;</code> 或 <code>localhost:&lt;port&gt;</code>（防 DNS 重绑定，<code>[::1]</code> 会被拒）。页面自己内嵌 token， 所以照旧一条命令就能用</li><li><code>openacom inbox [--status S] [--limit N] [--json]</code> — 查看带已读回执的发送记录 （<code>sent</code> 待回执 / <code>read</code> 已读 / <code>failed</code> 三次未回执判死）</li><li><code>openacom ack &lt;messageId&gt;</code> — 手动把一条追踪消息标记为已读</li><li><strong>已读回执模式</strong>：<code>send ... --require-read</code>（或 MCP <code>send_message</code> 的 <code>requireRead: true</code>，它是 inject 专属选项，要配 <code>inject:true</code>）——消息尾附带回执单（唯一 id），对方处理后调 <code>ack_message</code> 工具、或在<strong>发送之后新起的</strong> assistant 回合里包含 <code>ACK-&lt;id&gt;</code> 即算已读；回执判定 按发送前的基线计数做增量，所以复述历史页脚、引用旧转录都不再能伪造已读（发送前 读不到转录时，那一轮干脆不信任转录回执）。超时未回执（默认 90s，<code>--ack-timeout</code> 可调）自动重发，<strong>最多 3 次</strong>，仍无回执则判 <code>failed</code> 并如实上报——不再给发送方 假 OK。记录落在本地收件箱 <code>~/.openacom/inbox.sqlite</code>。注意：该模式会阻塞等待 回执（最坏 ~3×超时），调用方 MCP 超时要留够；stdio 上 <code>from</code> 地址无法认证， 而且&quot;已读&quot;本质上是被接收方自报的——目标只要新起一个含该 token 的回合就算已读</li><li><code>openacom mcp</code> — 以 stdio MCP server 运行：本地 8 工具 + 分布式 3 工具，共 <strong>11 个</strong> （逐个说明见下面「MCP 工具一览」）；接入 Claude Code、Claude Desktop、Codex、ZCode 等 MCP 客户端，配置示例见上方英文段。分布式三件套 <code>relay_nodes</code> / <code>relay_send</code> / <code>relay_status</code> 也一直在工具列表里，它们用进程环境的 <code>AGENTRELAY_URL</code> + <code>AGENTRELAY_TOKEN</code> 访问 Hub，没配就调用即失败（见「分布式通信」章节）</li><li>Claude 的 SSH 远程会话：<code>list</code>/<code>read</code> 以 <code>ssh:</code> 前缀标识（子代理转录不会列为 session）； <code>send</code> 支持远程会话——自动从 <code>~/.claude.json</code> 解析主机，在远程主机上找到活运行进程 （<code>--resume=&lt;id&gt;</code>），以 stream-json 用户回合注入其 stdin，回复实时流回桌面应用。 若目标会话当前未运行，先在桌面应用里启动一次</li></ul>
+<p><strong>MCP 工具一览</strong>（<code>openacom mcp</code> 暴露 11 个：本地 8 + 分布式 3）：</p>
+<div class="tablewrap"><table><thead><tr><th>工具</th><th>作用</th></tr></thead><tbody><tr><td><code>list_sessions</code></td><td>四家 agent 的会话混合表 + 模糊搜索</td></tr><tr><td><code>read_session</code></td><td>读某个会话最近几轮（<code>sessionId</code>，可选 <code>agent</code>、<code>last</code>）</td></tr><tr><td><code>send_message</code></td><td><strong>默认先入箱，再尝试所选路线投递一次</strong>；route:mailbox 显式仅入箱</td></tr><tr><td><code>send_desktop</code></td><td>唯一以&quot;在那个窗口里按回车&quot;为目的的动词：永远 submit、绝不降级、每次调用都要 consent</td></tr><tr><td><code>post_message</code></td><td>同一个邮箱，但由你自报 <code>from</code> 并可带稳定 <code>id</code> 做幂等重试；完全不含注入语义</td></tr><tr><td><code>inbox</code></td><td>列出追踪消息与邮箱行及其状态；可按 <code>to</code> / <code>from</code> / <code>status</code> 过滤</td></tr><tr><td><code>ack_message</code></td><td>结回执单：一条 <code>--require-read</code> 的发送，或一条邮箱行</td></tr><tr><td><code>get_paths</code></td><td>探测到的存储与 CLI 路径，含本进程两棵树的 acl、groups 注册表位置，以及本 MCP 被认成的身份</td></tr><tr><td><code>relay_nodes</code></td><td>已注册节点、其安全计数与存储 acl（Hub）</td></tr><tr><td><code>relay_send</code></td><td>把消息排到另一台机器上的具名目标（Hub）</td></tr><tr><td><code>relay_status</code></td><td>读一条分布式消息的耐久回执（Hub）</td></tr></tbody></table></div>
+<p><strong>默认先入箱，再尝试投递。</strong> send_message({to,message}) 先保存消息，再走一条路线。route 可选 auto（默认）、session、desktopcdp、desktop、relay、mailbox。auto 对 zcode 默认使用纯桌面 CDP，对其他本机地址使用会话适配器，对 node:nodeId/target 使用 relay。desktopcdp 不回退 UIA 或无头 CLI；zcode 需开启调试端口（默认本机 9222），桌面提交沿用现有 consent 设置。desktop 显式提交到 zcode 桌面，需要 consent。没有可用会话通道时明确返回 refused，消息仍留在 inbox。失败或不确定时不自动换路、不重试。</p>
+<p>结果包含 id/messageId、from、to、route、status 和可选 code/detail。状态为 stored、queued、accepted、refused、uncertain，均不代表模型已读或任务完成。通过 inbox 查询保留的消息，ack_message 显式确认已读。同一稳定 id 重复调用只返回原结果，不再次投递；更换内容或路线返回 ID_CONFLICT。核实前次结果后，如需再次尝试需显式使用新 id。组权限在保存和投递前检查。</p>
+<p>route:mailbox、旧 inject:false 和 post_message 是显式仅入箱；旧 inject:true 保留原直接注入行为及其回执模式，不要与 route 混用。新路线不因缺少已读回执自动重发。CLI 使用 openacom deliver，SDK 使用 openacom/routing 的 sendRouted；独立 embedded 接口保持原样。</p>
+<p><strong><code>send_desktop</code>——那个会按回车的动词。</strong> 它是 MCP 里唯一以&quot;往桌面窗口注入并提交&quot;为目的的入口， 因此也是唯一会打扰你正在打字的窗口的入口，并被刻意收窄：只支持 zcode 目标（否则 <code>DESKTOP_UNSUPPORTED</code>）、<strong>永远 submit</strong>（这里没有草稿模式）、<strong>绝不降级</strong>（不会退回无头，也不会 悄悄改回邮箱）。它唯一的换路是&quot;调试端口根本没人在听&quot;时改走旧的 UIA 传输，那条路同样会按回车； 端口应答但身份不像 ZCode 则是硬拒。每次调用都要各自的授权：<code>consent:true</code>，或本 MCP 进程环境里 <code>OPENACOM_DESKTOP_CONSENT=1</code>，否则 <code>CONSENT_REQUIRED</code> 且 <code>uncertain:false</code>——一个字都没进窗口。 <code>from</code> / <code>to</code> / <code>message</code> 必填，<code>timeoutMs</code> 默认 60 秒，组闸门与 CDP 身份核验一视同仁。它在输入 落地后返回（<code>status:&quot;desktop-submitted&quot;</code>、<code>delivery:&quot;desktop&quot;</code>），回合随后在应用内跑，用 <code>read_session</code> 看结果。不需要实时窗口时，请改用 <code>send_message</code> 的缺省路径或 <code>post_message</code>。</p>
+<p>安装：<code>npm install -g github:Bring-AI/OpenAcom</code>（需 Node ≥ 22.13；22.5–22.12 需加 <code>--experimental-sqlite</code>）。<code>Bring-AI/OpenAcom</code> 当前是 <strong>private</strong> 仓库：从 GitHub 安装需要 对该仓库有访问权（先配置好 GitHub 凭据）；包名 <code>openacom</code> 尚未发布到 npm。</p>
+<p>仓库里还有两个&quot;派生件&quot;，都不是运行期依赖：<code>node tools/gen-docs.js</code> 从本文件与源码树重新生成静态 文档站到 <code>docs/index.html</code>（英文）与 <code>docs/zh/index.html</code>（中文）——改了 README 或代码后要重跑， 页面是抽取出来的、不是手抄的；<code>desktop/</code> 是一个面向回环 Hub 的单文件 WinForms 客户端，用 Windows 自带的 C# 编译器经 <code>desktop/build.cmd</code> 编成 <code>desktop/openacom-desktop.exe</code>（它只显示所发 token 的 SHA-256 前缀指纹，不显示也不落盘 token 本身）。</p>
+<p><strong>发送的前提</strong>：claude 需要 <code>claude</code> CLI 在 PATH 且 API 可达；codex 需要 <code>codex</code> CLI 已认证； zcode 自动探测桌面版自带的 <code>zcode.cjs</code>（可用 <code>AGENTRELAY_ZCODE_CLI</code> 指定），且 <code>~/.zcode/cli/config.json</code> 里要有 provider/model 配置（<code>model</code> 必须是 <code>&quot;provider/model&quot;</code> 字符串， 桌面端的 <code>~/.zcode/v2/config.json</code> 对无头 CLI 不生效），示例见上方。</p>
+<p><strong>注意</strong>：<code>send</code> 会消耗目标 agent 的模型额度并永久写入其 session 历史；给正在忙碌的 session 发送可能抢占当前轮次；session 存储格式是四家 agent 的本地私有格式，随版本可能变化。 <strong>codex 单写入者锁</strong>：正开在 Codex TUI/桌面里的会话持有线程锁，codex 自身会拒绝无头 注入（<code>thread-store conflict</code>）——请在那个 TUI 里直接发言，或先关闭该会话；<code>read</code> 不受影响。 <strong>zcode 无头配置随桌面更新易失效</strong>：无头运行依赖内置 CLI 按自身目录解析的 provider 配置文件，桌面版更新曾移动过该文件位置（<code>resources\glm\provider\</code> ↔ <code>resources\config\provider\</code>）。本仓库自己抛的是 <code>headless zcode needs a model provider config at &lt;path&gt; (key &quot;provider&quot; + &quot;model&quot;)</code> （找不到 CLI 时是 <code>zcode CLI (zcode.cjs) not found; set AGENTRELAY_ZCODE_CLI to its full path</code>）； 内置 CLI 也可能报它自己的「无法定位 … Built-in Provider Config」字样（那句话来自 ZCode， 不在本仓库代码里）。无论哪一条，把 <code>zcode-builtin.json</code> 复制到报错指出的路径即可； CDP 可见投递不依赖此文件。</p>
+<p><strong>fresh 会话模式（默认的 agent 间通信）</strong>：<code>openacom send &lt;消息&gt;</code>（不带 sessionId 即走此模式；<code>--fresh</code> 为显式形式）在一个 <strong>全新</strong> zcode 会话里执行消息（无头、同步拿回复、返回 sessionId）。新会话会自动出现在 桌面应用的任务列表里，点开即可读完整记录——agent 流量对桌面始终可见，且完全不碰 用户开着的会话（桌面不会重渲染已打开会话的外部写入）。需要多轮往来时，用普通 <code>send &lt;id&gt;</code> 续聊这个新会话即可——它没有被任何桌面标签页持有，不存在失效问题。</p></article></main></div></div>
+<footer><div class="wrap"><p>OpenAcom 版本 0.16.4 · 由 tools/gen-docs.js 从 README.md 与源码树生成；本页所有 API 面均为抽取，而非手抄。</p><p>单文件静态 HTML：无 CDN、无外部字体、无运行时依赖，可直接以 file:// 打开。</p><p>来源: <code>README.md</code> <code>package.json</code> <code>bin/openacom.js</code> <code>lib/mcp.js</code> <code>lib/index.js</code> <code>lib/sdk.js</code> <code>lib/distributed.js</code> <code>lib/distributed-cli.js</code> <code>lib/desktop-delivery.js</code> <code>lib/groups.js</code> <code>lib/delivery.js</code></p></div></footer>
+</body>
+</html>

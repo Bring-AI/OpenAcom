@@ -34,7 +34,7 @@
 <header>
   <h1>OpenAcom 文档</h1>
   <a href="/">← 收件箱</a>
-  <a href="https://github.com/wwy155/openacom#readme" target="_blank">GitHub README（完整版）</a>
+  <a href="https://github.com/Bring-AI/OpenAcom#readme" target="_blank">GitHub README（完整版）</a>
   <span style="color:var(--dim);font-size:12px;margin-left:auto" id="ver"></span>
 </header>
 <nav>
@@ -49,12 +49,13 @@
 <main>
 
 <h2 id="quick">快速开始</h2>
-<pre><code>npm install -g github:wwy155/openacom   # Node ≥ 22.5
+<pre><code>npm install -g github:Bring-AI/OpenAcom   # Node ≥ 22.5
 
 openacom list                # 四家 agent 会话混合列表（模糊搜索，默认 top30）
 openacom read &lt;sessionId&gt;    # 读任意会话最近对话
 openacom send &lt;sessionId&gt; "消息" --require-read   # 带已读回执发送
 openacom web                 # 本页 + 收件箱面板</code></pre>
+<p class="note">OpenAcom 是<b>私有仓库</b>：从 GitHub 安装需要先有 <code>Bring-AI/OpenAcom</code> 的访问权限（配好 SSH key 或已登录的 gh）；公共 npm 上没有 <code>openacom</code> 包，<code>npm install openacom</code> 装不到本工具。</p>
 
 <h2 id="cli">CLI 命令</h2>
 <table>
@@ -67,7 +68,7 @@ openacom web                 # 本页 + 收件箱面板</code></pre>
   <tr><td><code>inbox [--status S] [--json]</code></td><td>查看追踪消息及状态：sent 待回执 / read 已读 / failed 判死</td></tr>
   <tr><td><code>ack &lt;messageId&gt;</code></td><td>手动把一条追踪消息标记为已读</td></tr>
   <tr><td><code>hooks</code></td><td>查看已配置的事件钩子</td></tr>
-  <tr><td><code>web [port]</code></td><td>启动收件箱面板 + 本文档（默认 127.0.0.1:9339）</td></tr>
+  <tr><td><code>web [port]</code></td><td>启动收件箱面板 + 本文档（默认 127.0.0.1:9339）。<code>/api/*</code> 需 <code>X-OpenAcom-Token</code> 头：token 在 <code>~/.openacom/openacom-web.token</code>（首次启动生成并打印到 stderr，可用 <code>AGENTRELAY_WEB_TOKEN</code> 固定）；面板页自动携带，curl 时手工加上即可</td></tr>
   <tr><td><code>oc-serve / oc-attach [目录]</code></td><td>opencode 共享 server：预热 / 一步打开实时 TUI</td></tr>
   <tr><td><code>mcp</code> / <code>mcp-http [port]</code></td><td>stdio / streamable-HTTP MCP 服务器</td></tr>
   <tr><td><code>relay ...</code> / <code>terminal ...</code></td><td>分布式消息（hub/node/send/status）与托管终端，见下方分布式节</td></tr>
@@ -118,7 +119,7 @@ openacom send sess_x "紧急…" --require-read --ack-timeout 30000
 <p>用 <code>openacom hooks</code> 查看当前生效配置。</p>
 
 <h2 id="sdk">Node SDK</h2>
-<p><code>npm install openacom</code>（或直接 <code>require('openacom/lib/index.js')</code>）：</p>
+<p><code>npm install -g github:Bring-AI/OpenAcom</code>（或直接 <code>require('openacom/lib/index.js')</code>）：</p>
 <pre><code>const relay = require('openacom');
 
 relay.listSessions({ query: '组长', limit: 5 });        // 会话列表
@@ -141,16 +142,18 @@ await relay.web.start(9339);                             // 启动面板+文档<
 <p>跨机器用「带鉴权 Hub + SQLite 队列 + 各机器 Node 轮询」架构：消息持久化、幂等提交、
 崩溃不重放（uncertain 状态需人工核实）。目标类型两种：<code>terminal</code>（托管真实 TUI 的可见输入）
 和 <code>zcode</code>（桌面严格 CDP 投递，失败不降级）。完整配置步骤（token、SSH 转发、targets.json、
-输入锁）见 <a href="https://github.com/wwy155/openacom#readme" target="_blank">GitHub README</a> 的
+输入锁）见 <a href="https://github.com/Bring-AI/OpenAcom#readme" target="_blank">GitHub README</a> 的
 「分布式通信」章节；MCP 侧配好 <code>AGENTRELAY_URL/TOKEN</code> 即得 <code>relay_nodes/relay_send/relay_status</code> 三工具。</p>
 
 <pre style="text-align:center;background:none;border:none;color:var(--dim)">OpenAcom · one MCP/CLI command managing agent sessions
 across desktops and CLIs on different local/remote machines</pre>
 </main>
 <script>
-  fetch('/api/stats').catch(()=>{});
+  window.__OPENACOM_TOKEN__ = typeof __OA_TOKEN__ === 'string' ? __OA_TOKEN__ : '';
+  const oaApi = (p) => fetch(p, { headers: { 'X-OpenAcom-Token': window.__OPENACOM_TOKEN__ } });
+  oaApi('/api/stats').catch(()=>{});
   // version from MCP-free endpoint
-  fetch('/api/meta').then(r=>r.json()).then(m=>document.getElementById('ver').textContent='v'+m.version).catch(()=>{});
+  oaApi('/api/meta').then(r=>r.json()).then(m=>document.getElementById('ver').textContent='v'+m.version).catch(()=>{});
 </script>
 </body>
 </html>

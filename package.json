@@ -1,6 +1,6 @@
 {
   "name": "openacom",
-  "version": "0.11.0",
+  "version": "0.16.4",
   "description": "One MCP/CLI command managing agent sessions across desktops and CLIs on different local/remote machines",
   "license": "MIT",
   "bin": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wwy155/openacom.git"
+    "url": "git+https://github.com/Bring-AI/OpenAcom.git"
   },
   "keywords": [
     "claude-code",
@@ -27,11 +27,29 @@
     "update": "git pull && npm install -g .",
     "test": "node --test"
   },
-  "dependencies": {
+  "dependencies": {},
+  "optionalDependencies": {
     "node-pty": "^1.1.0"
   },
   "main": "lib/index.js",
   "exports": {
-    ".": "./lib/index.js"
-  }
+    ".": "./lib/index.js",
+    "./embedded": {
+      "types": "./lib/comms.d.ts",
+      "default": "./lib/comms.js"
+    },
+    "./routing": {
+      "types": "./lib/routing.d.ts",
+      "default": "./lib/routing.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "docs/",
+    "README.md",
+    "banner.png",
+    "tools/",
+    "desktop/"
+  ]
 }

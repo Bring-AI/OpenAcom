@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide · OpenAcom</title>
+<meta name="description" content="Guide - Opensource, distributed, and safe agent communication.">
+<style>
+:root{--bg:#0d1420;--panel:#16202e;--panel2:#101a28;--line:#22304a;--fg:#b9c3d1;--head:#e8eef7;--accent:#3b82f6;--muted:#7d8ba0;--code:#9fc0e8;--warn:#d29922}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,"Segoe UI",Roboto,"Helvetica Neue","Microsoft YaHei",sans-serif}
+a{color:var(--accent)}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:12.5px/1.5 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--code);overflow-wrap:anywhere}
+pre.code{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;max-width:100%;font:12.5px/1.6 ui-monospace,Consolas,"Cascadia Mono",monospace;color:#c6d4e6}
+pre.code code{background:none;border:none;padding:0;color:inherit;overflow-wrap:normal;white-space:pre}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:8px;top:8px;background:var(--panel);padding:6px 10px;border-radius:6px;z-index:99}
+header.topbar{position:sticky;top:0;z-index:10;background:rgba(13,20,32,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;text-decoration:none;line-height:1.1;padding:6px 0}
+.brand .wordmark{color:#fff;font-weight:800;font-size:19px;letter-spacing:.2px}
+.brand .rule{width:34px;height:3px;background:var(--accent);border-radius:2px;margin-top:3px}
+.brand .brandtag{color:var(--muted);font-size:10px;letter-spacing:.03em;margin-top:3px;max-width:34ch}
+nav.mainnav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+nav.mainnav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:6px 9px;border-radius:6px}
+nav.mainnav a:hover{color:var(--head);background:var(--panel)}
+nav.mainnav a.on{color:var(--head);background:var(--panel);box-shadow:inset 0 -2px 0 var(--accent)}
+a.langswitch{color:var(--accent);text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.08em;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+a.langswitch:hover{border-color:var(--accent)}
+.hero{padding:44px 0 8px}
+.hero .wordmark{color:#fff;font-weight:800;font-size:clamp(34px,6vw,52px);letter-spacing:.5px;margin:0}
+.hero .rule{width:76px;height:5px;background:var(--accent);border-radius:3px;margin:10px 0 18px}
+.hero .tagline{color:#cfd8e6;font-size:clamp(15px,2.4vw,19px);margin:0 0 10px;max-width:46ch}
+.hero .lede{max-width:70ch;margin:0 0 18px}
+.hero .meta{color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin:22px 0 8px}
+.cards a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg)}
+.cards a:hover{border-color:var(--accent)}
+.cards a b{display:block;color:var(--head);font-size:14.5px;margin-bottom:4px}
+.cards a span{font-size:12.5px;color:var(--muted);display:block}
+.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:30px;padding:26px 0 40px}
+details.tocbox{align-self:start;position:sticky;top:66px}
+details.tocbox summary{cursor:pointer;color:var(--muted);font-size:13px;padding:6px 0}
+.toc-title{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc li a{display:block;color:var(--muted);text-decoration:none;font-size:13px;padding:4px 10px;border-left:2px solid transparent;margin-left:-1px}
+.toc li a:hover{color:var(--head)}
+.toc li.l3 a{padding-left:22px;font-size:12.5px}
+article{min-width:0}
+article h1{color:var(--head);font-size:26px;margin:0 0 6px}
+article h1 .rule{display:block;width:52px;height:4px;background:var(--accent);border-radius:2px;margin-top:8px}
+article h2{color:var(--head);font-size:20px;margin:38px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+article h3{color:var(--head);font-size:16px;margin:26px 0 8px}
+article h4{color:var(--head);font-size:14px;margin:20px 0 6px}
+article p{margin:10px 0;max-width:82ch}
+article ul,article ol{max-width:82ch;padding-left:22px}
+article li{margin:4px 0}
+blockquote{border-left:3px solid var(--accent);background:var(--panel);margin:12px 0;padding:8px 14px;border-radius:0 8px 8px 0}
+.tablewrap{overflow-x:auto;max-width:100%;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel);color:var(--head);font-weight:600;white-space:nowrap}
+td code{white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.card h3{margin:0 0 6px}
+.card .desc{margin:6px 0 10px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:1px 9px;color:var(--muted);vertical-align:middle;margin-left:8px}
+.badge.req{color:var(--accent);border-color:var(--accent)}
+.badge.todo{color:var(--warn);border-color:var(--warn)}
+.src{color:var(--muted);font-size:11.5px;margin:8px 0 0}
+.note{color:var(--muted);font-size:13px;border-left:3px solid var(--line);padding-left:12px;margin:10px 0}
+input.filterbox{width:100%;max-width:340px;background:var(--panel2);border:1px solid var(--line);color:var(--head);border-radius:8px;padding:7px 10px;font:13.5px inherit;font-family:inherit;margin:8px 0 4px}
+input.filterbox:focus{outline:1px solid var(--accent)}
+[hidden]{display:none!important}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:18px 0 30px;color:var(--muted);font-size:12.5px}
+footer p{margin:4px 0;max-width:90ch}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;gap:10px}
+  .brand .brandtag{display:none}
+  details.tocbox{position:static;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+  .topbar .wrap{gap:10px}
+  nav.mainnav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar"><div class="wrap"><a class="brand" href="index.html"><span class="wordmark">OpenAcom</span><span class="rule"></span><span class="brandtag">Opensource, distributed, and safe agent communication.</span></a><nav class="mainnav" aria-label="site"><a href="index.html">Home</a><a href="install.html">Install</a><a href="cli.html">CLI</a><a href="mcp.html">MCP tools</a><a href="sdk.html">SDK</a><a href="relay.html">Relay & security</a><a class="on" href="#">Guide</a></nav><a class="langswitch" href="zh/guide.html">ZH</a></div></header>
+<div class="wrap"><div class="layout"><details class="tocbox" open><summary>On this page</summary><nav class="toc"><ul><li class="l2"><a href="#how-it-works-the-interesting-parts">How it works (the interesting parts)</a></li><li class="l3"><a href="#zcode-provides-no-session-api-how-sending-was-made-possible">ZCode provides no session API - how sending was made possible</a></li><li class="l3"><a href="#remote-ssh-claude-sessions-reading-a-mirror-writing-to-the-live-brain">Remote (SSH) Claude sessions - reading a mirror, writing to the live brain</a></li><li class="l3"><a href="#remote-agents-driving-local-sessions">Remote agents driving local sessions</a></li><li class="l3"><a href="#desktop-mode-zcode-windows-the-only-route-by-design">Desktop mode (zcode, Windows) — the only route, by design</a></li><li class="l2"><a href="#where-sessions-come-from-how-sends-are-delivered">Where sessions come from &amp; how sends are delivered</a></li><li class="l2"><a href="#per-agent-requirements">Per-agent requirements</a></li><li class="l2"><a href="#caveats">Caveats</a></li></ul></nav></details><main id="main"><article><h1>Guide<span class="rule"></span></h1><h2 id="how-it-works-the-interesting-parts">How it works (the interesting parts)</h2><h3 id="zcode-provides-no-session-api-how-sending-was-made-possible">ZCode provides no session API - how sending was made possible</h3>
+<p>ZCode desktop keeps every conversation in a local SQLite database (<code>~/.zcode/cli/db/db.sqlite</code>, <code>message</code> + <code>part</code> tables). OpenAcom reads sessions straight from that DB. Sending required reverse-engineering three delivery routes:</p>
+<ul><li><strong>Headless resume</strong>: the CLI bundled with the desktop app (<code>zcode.cjs --resume &lt;id&gt; --prompt</code>) materializes the session in its own process and runs the turn there. Needs a model provider in <code>~/.zcode/cli/config.json</code> (<code>&quot;model&quot;: &quot;provider/model-id&quot;</code>); the desktop app's copy under <code>~/.zcode/v2/config.json</code> is not read by headless runs.</li><li><strong>Why the desktop window does not refresh on external writes</strong>: the app is a single-writer architecture. The UI renders state held in its app-server's memory; the database is its persistence log, not a shared bus. External inserts are never re-read (verified: queue-table rows written by outside processes stay unclaimed; there is no TCP/pipe control surface; injecting a row into the internal session_input queue is ignored). Messages still land and the agent still processes them - only the open window does not repaint.</li><li><strong>CDP route (the default; the only visible route)</strong>: start the app with <code>--remote-debugging-port=9222</code> and OpenAcom drives the renderer directly - locate the session row in the sidebar, focus the composer, insert the message as trusted input, press Enter. The turn runs *inside* the app: live refresh, native message chain, and with <code>zcodeInteractionBehavior: &quot;guide&quot;</code> a message arriving mid-turn steers the running agent instead of queueing. Works while the window is backgrounded or minimized (renderer-level events, no OS focus steal). This is the only way to deliver into a conversation the user has open. Headless is now opt-in only (<code>--no-desktop</code> / <code>desktop: false</code>); a CDP failure surfaces as an error instead of silently degrading.</li></ul>
+<h3 id="remote-ssh-claude-sessions-reading-a-mirror-writing-to-the-live-brain">Remote (SSH) Claude sessions - reading a mirror, writing to the live brain</h3>
+<p>Claude sessions on SSH workspaces keep only a transcript mirror locally; the live process (<code>ccd-cli --resume=&lt;id&gt; --input-format stream-json</code>) runs on the server and consumes user turns from its stdin. OpenAcom:</p>
+<ol><li>resolves the host from the <code>ssh:&lt;host&gt;:&lt;cwd&gt;</code> project keys in <code>~/.claude.json</code> (e.g. <code>ssh:root@1.2.3.4:/root/TokenGateway</code>);</li><li>finds the live runner over SSH by its <code>--resume=&lt;id&gt;</code> flag;</li><li>writes one stream-json user turn into <code>/proc/&lt;pid&gt;/fd/0</code>.</li></ol>
+<p>The turn executes inside the live process, so the reply streams back to the Claude desktop in real time and the chain stays native.</p>
+<h3 id="remote-agents-driving-local-sessions">Remote agents driving local sessions</h3>
+<p>stdio MCP servers can only be spawned by local clients, so for agents on other machines OpenAcom also speaks streamable HTTP, paired with an SSH reverse tunnel (<code>tools/relay-remote-up.ps1</code>). The script listens on <code>127.0.0.1:9322</code> locally (9321 is commonly taken by other desktop apps) and maps the remote's unchanged <code>9321</code> onto it, so the remote client registers <code>http://127.0.0.1:9321/mcp</code> and gets the same tools operating on your local sessions; traffic never leaves the SSH tunnel.</p>
+<h3 id="desktop-mode-zcode-windows-the-only-route-by-design">Desktop mode (zcode, Windows) — the only route, by design</h3>
+<p>A zcode <code>send</code> delivers through the <strong>desktop UI over CDP</strong>: it locates the session in the desktop app's sidebar, focuses the composer, and types the message in as renderer-level trusted input (no focus stealing). The turn runs <strong>inside the desktop app</strong>, so its window updates live, the message chain stays native, and if the session is mid-turn the message <strong>steers</strong> it (requires the desktop setting <code>zcodeInteractionBehavior: &quot;guide&quot;</code>).</p>
+<p>There is <strong>no silent fallback</strong>: if CDP delivery fails (app not running with the debug port, session row not found, composer not reachable), the send <strong>errors out</strong> — earlier versions quietly degraded to a headless run that could use a different model than the session UI, or drop the message entirely when headless was broken. The caller sees the real failure and can retry. <code>--no-desktop</code> (CLI) or <code>desktop: false</code> (MCP) is the explicit headless escape hatch for when you want that behavior on purpose — it is also the route to take when the consent gate below refuses to submit.</p>
+<p>Two gates sit in front of that visible path now:</p>
+<ul><li><strong>Consent.</strong> This transport always presses Enter, and it has no draft mode of its own, so it refuses to type anything until either that individual message carries consent (<code>--consent true</code> on the CLI, <code>consent: true</code> on the strict node path, on <code>relay_send</code>, and on the two MCP desktop verbs <code>send_desktop</code> and <code>send_message</code> with <code>inject:true</code> + <code>desktop:true</code>) or the sender's process environment sets <code>OPENACOM_DESKTOP_CONSENT=1</code> (legacy <code>AGENTRELAY_DESKTOP_CONSENT=1</code> also works). A refusal is <code>CONSENT_REQUIRED</code> with <code>uncertain: false</code>: the window was never touched. Asking this transport for a draft is <code>INVALID_MODE</code>, never quietly turned into a submit; add <code>--desktop</code> with <code>--draft</code> and the CLI switches to the strict sender, which stops before Enter. The MCP default <code>send_message</code> never reaches this transport at all — it stores into the target's inbox — so there is nothing to authorize there.</li><li><strong>Endpoint identity.</strong> Before any text goes out, the port must answer as the ZCode desktop: <code>/json/version</code> naming a Chromium-family engine with <code>Electron/&lt;digit&gt;</code> in its <code>User-Agent</code>, exactly one identity-shaped page in <code>/json</code>, and a matching <code>navigator.userAgent</code> after connecting. A port that answers but does not match is <code>CDP_IDENTITY</code> and a hard refusal; only &quot;nothing answered&quot; (<code>DESKTOP_UNAVAILABLE</code>) may divert to UIA. <strong>These defaults are not verified against a live machine</strong> (see CDP identity checks above): the guarantee is fail-closed refusal, not protection from an impersonator.</li></ul>
+<p>One-time setup:</p>
+<pre class="code" data-lang="powershell"><code># quit ZCode first (tray icon -&gt; exit), then:
+powershell -ExecutionPolicy Bypass -File tools\start-zcode-cdp.ps1</code></pre>
+<p>This relaunches the app with <code>--remote-debugging-port=9222</code> (CDP is a local control surface — only enable it on a machine you trust). To make it permanent, add that flag to your ZCode shortcut's Target instead.</p>
+<p>Trade-offs: Windows only; the desktop app must be running with the CDP flag; matches the session by title prefix; returns no reply text (the turn runs asynchronously in the app).</p><h2 id="where-sessions-come-from-how-sends-are-delivered">Where sessions come from &amp; how sends are delivered</h2><div class="tablewrap"><table><thead><tr><th>Agent</th><th>Sessions read from</th><th>Send channel</th></tr></thead><tbody><tr><td>claude</td><td><code>~/.claude/projects/**/*.jsonl</code></td><td><code>claude --resume &lt;id&gt; -p</code> (prompt via stdin)</td></tr><tr><td>codex</td><td><code>~/.codex/sessions/**/rollout-*.jsonl</code></td><td><code>codex exec resume &lt;id&gt; -</code> (prompt via stdin)</td></tr><tr><td>zcode</td><td><code>~/.zcode/cli/db/db.sqlite</code></td><td>desktop UI over CDP (default; submit needs <code>--consent true</code> or <code>OPENACOM_DESKTOP_CONSENT=1</code>, and the port must pass the identity check; <code>--desktop --draft</code> types without pressing Enter); <code>zcode.cjs --resume &lt;id&gt; --prompt &lt;msg&gt;</code> with <code>--no-desktop</code></td></tr><tr><td>opencode</td><td><code>~/.local/share/opencode/opencode.db</code></td><td>project shared server <code>POST /session/&lt;id&gt;/message</code> (auto-started); <code>opencode run -s &lt;id&gt;</code> (message via stdin) as fallback</td></tr></tbody></table></div>
+<p>The session features above run locally against your existing installs and add no service, port, or daemon of their own. The opt-in pieces do listen, on localhost only: <code>relay hub</code> (default <code>127.0.0.1:9330</code>), the distributed node itself opens no port (it polls the hub), <code>web</code> binds <code>127.0.0.1:9339</code> behind its token, and <code>mcp-http</code> binds <code>127.0.0.1:9321</code> by default.</p>
+<p><strong>Remote (SSH) Claude workspaces</strong> appear in <code>list</code>/<code>read</code> with an <code>ssh:</code> prefix on the workspace; subagent transcripts (<code>agent-*.jsonl</code>) are never listed as sessions. <code>send</code> to a remote session is supported: OpenAcom resolves the SSH host from the <code>ssh:&lt;host&gt;:&lt;cwd&gt;</code> keys in <code>~/.claude.json</code>, finds the live session runner process (<code>--resume=&lt;id&gt;</code>) on that host, and injects the message into its stdin as a stream-json user turn — the turn runs inside the live process, so the reply streams to the desktop app in real time. If the session is not currently running, start it once from the desktop app first. Codex and ZCode sessions are local; no remote handling applies.</p><h2 id="per-agent-requirements">Per-agent requirements</h2><ul><li><strong>claude</strong> — <code>claude</code> CLI on PATH, logged in, and its API endpoint reachable (check <code>ANTHROPIC_BASE_URL</code> if you use a relay).</li><li><strong>codex</strong> — <code>codex</code> CLI on PATH and authenticated (<code>~/.codex/auth.json</code>).</li><li><strong>zcode</strong> — the desktop install's <code>zcode.cjs</code> is auto-detected from <code>ZCODE_WINDOWS_APP_INSTALL_DIR</code> / <code>%LOCALAPPDATA%\Programs\ZCode</code> (override with <code>AGENTRELAY_ZCODE_CLI</code>). Headless sends additionally need a model provider in <code>~/.zcode/cli/config.json</code>:</li></ul>
+<pre class="code" data-lang="json"><code>  {
+    &quot;provider&quot;: {
+      &quot;bigmodel&quot;: {
+        &quot;kind&quot;: &quot;anthropic&quot;,
+        &quot;options&quot;: { &quot;apiKey&quot;: &quot;sk-...&quot;, &quot;baseURL&quot;: &quot;https://open.bigmodel.cn/api/anthropic&quot; }
+      }
+    },
+    &quot;model&quot;: &quot;bigmodel/GLM-5.3&quot;
+  }</code></pre>
+<p>Note <code>&quot;model&quot;</code> must be a <code>&quot;provider/model&quot;</code> string. The desktop app keeps its own copy under <code>~/.zcode/v2/config.json</code>, which the headless CLI does <strong>not</strong> read — hence this file.</p><h2 id="caveats">Caveats</h2><ul><li><code>send</code> spends tokens on the target agent and permanently appends to that session's history.</li><li>Sending to a session that is currently busy in its own UI may preempt the active turn.</li><li><strong>Codex single-writer lock</strong>: a codex session that is currently open in a Codex TUI/desktop holds its thread lock, and headless injection into it is refused by codex itself (<code>thread-store conflict</code>). Deliver in that TUI directly, or close the conversation first; <code>read</code> is unaffected. Sessions nobody has open send fine.</li><li><strong>ZCode headless config is fragile across app updates</strong>: headless runs need the provider config the bundled CLI resolves relative to its own directory — the desktop app has moved it between releases (e.g. <code>resources\glm\provider\</code> vs <code>resources\config\provider\</code>). Our own failure text is <code>headless zcode needs a model provider config at &lt;path&gt; (key &quot;provider&quot; + &quot;model&quot;)</code> (and <code>zcode CLI (zcode.cjs) not found; set AGENTRELAY_ZCODE_CLI to its full path</code> when the CLI itself is missing); the bundled CLI can also report a missing built-in provider config in its own words. Either way, copy <code>zcode-builtin.json</code> to the path the error names. Visible CDP delivery does not depend on this file.</li><li>Session storage layouts are the agents' local, undocumented formats and may change between versions.</li><li>Prompt payloads always travel via stdin or a directly-spawned process — never through a shell — so arbitrary quotes/newlines in messages are safe.</li><li><strong>Desktop consent</strong>: any route that presses Enter in the ZCode window needs <code>OPENACOM_DESKTOP_CONSENT=1</code> in the sender's environment, or consent on that one message (<code>--consent true</code> on the CLI; <code>consent: true</code> on <code>relay_send</code>, <code>send_desktop</code>, and <code>send_message</code> with <code>inject:true</code> + <code>desktop:true</code>). Nothing submits into your desktop without one of the two — expect <code>CONSENT_REQUIRED</code> the first time, and answer it with <code>--desktop --draft</code> or a deliberate <code>--consent true</code>.</li><li><strong>The MCP default stores, it does not inject</strong>: a <code>send_message</code> call without <code>inject:true</code> only writes a row into the local inbox, so a target that never polls <code>inbox</code> never sees it — nothing is pushed and nobody is woken. Live input is opt-in: <code>inject:true</code>, <code>send_desktop</code>, or the CLI <code>send</code>.</li><li><strong>Secrets on disk</strong>: <code>openacom web</code> prints its dashboard token to stderr once, when it creates <code>~/.openacom/openacom-web.token</code>. Do <strong>not</strong> archive that stderr into a log file; pin <code>AGENTRELAY_WEB_TOKEN</code> in a private place instead.</li><li><strong>MCP call log</strong>: every tool call is appended to <code>~/.openacom/logs/mcp-calls.log</code> (moved by <code>AGENTRELAY_HOME</code>; dir <code>0700</code>, file <code>0600</code>, rotated to <code>mcp-calls.log.1</code> past 1 MiB). Message bodies are never stored there — <code>text</code>, <code>message</code> and <code>query</code> are reduced to <code>len=&lt;bytes&gt; sha256:&lt;first 12 hex&gt;</code> — but every other argument (session ids, target names, node ids) is recorded verbatim, so the log still reveals who talked to whom.</li><li><strong>Store permissions</strong>: on POSIX a group/world-readable <code>targets.json</code> stops the node from starting, and anything <code>icacls</code>/<code>chmod</code> could not tighten is reported as <code>acl:'inherited'</code> rather than failing quietly. A Windows named pipe cannot be tightened by path at all, so managed terminals there rest on their per-terminal secret alone.</li><li><strong>Upgrade hub and node together</strong>: mixed versions get 403s on poll and unparseable <code>deferred</code> acks.</li><li>An <code>uncertain</code> distributed message is <strong>never</strong> replayed automatically; that is the whole point of the status. Check the destination screen before sending again.</li></ul></article></main></div></div>
+<footer><div class="wrap"><p>OpenAcom Version 0.16.4 · Generated by tools/gen-docs.js from README.md and the source tree; every API surface on this page is extracted, not retyped.</p><p>Single-file static HTML: no CDN, no web fonts, no runtime dependencies. Opens from disk over file://.</p><p>Sources: <code>README.md</code> <code>package.json</code> <code>bin/openacom.js</code> <code>lib/mcp.js</code> <code>lib/index.js</code> <code>lib/sdk.js</code> <code>lib/distributed.js</code> <code>lib/distributed-cli.js</code> <code>lib/desktop-delivery.js</code> <code>lib/groups.js</code> <code>lib/delivery.js</code></p></div></footer>
+</body>
+</html>
